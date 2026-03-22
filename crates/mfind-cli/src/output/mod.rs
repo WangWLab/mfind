@@ -41,9 +41,31 @@ impl OutputWriter {
         }
     }
 
+    /// Print string slice results
+    pub fn print_string_results(&self, results: &[String]) {
+        match self.format {
+            OutputFormat::List | OutputFormat::Table => {
+                for path in results {
+                    println!("{}", path);
+                }
+            }
+            OutputFormat::Json => {
+                match serde_json::to_string_pretty(results) {
+                    Ok(json) => println!("{}", json),
+                    Err(e) => eprintln!("Error serializing to JSON: {}", e),
+                }
+            }
+            OutputFormat::Null => {
+                for path in results {
+                    print!("{}\0", path);
+                }
+            }
+        }
+    }
+
     fn print_list<T: Serialize + std::fmt::Debug>(&self, results: &[T]) {
         for result in results {
-            // For now, just debug print
+            // Fallback to debug print
             println!("{:?}", result);
         }
     }

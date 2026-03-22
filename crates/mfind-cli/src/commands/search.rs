@@ -4,6 +4,9 @@ use clap::Args;
 use console::style;
 
 use crate::output::{OutputFormat, OutputWriter};
+use mfind_core::{IndexEngine, IndexConfig, QueryParser};
+use mfind_core::index::engine::IndexEngineTrait;
+use std::path::PathBuf;
 
 /// Search for files
 #[derive(Args, Default)]
@@ -100,22 +103,95 @@ impl SearchCommand {
             return Ok(());
         }
 
-        // TODO: Implement actual search
-        // For now, show a message
+        // Determine search paths
+        let search_paths: Vec<PathBuf> = if self.paths.is_empty() {
+            vec![std::env::current_dir()?]
+        } else {
+            self.paths.iter().map(PathBuf::from).collect()
+        };
+
+        // Build index configuration
+        let index_config = IndexConfig {
+            include_hidden: self.hidden,
+            gitignore_ignore: !self.no_gitignore,
+            follow_symlinks: self.follow,
+            ..Default::default()
+        };
+
+        // Create index engine
+        let mut engine = IndexEngine::new(index_config)?;
+
+        // Build or load index
+        eprintln!(
+            "{} Building index for: {}",
+            style("→").blue(),
+            style(search_paths.iter()
+                .map(|p| p.display().to_string())
+                .collect::<Vec<_>>()
+                .join(", ")
+            ).green()
+        );
+
+        let stats = engine.build(&search_paths).await?;
+        eprintln!(
+            "{} Indexed {} files in {:?}",
+            style("✓").green(),
+            style(stats.total_files).cyan(),
+            stats.build_time
+        );
+
+        // Parse query
+        let query_pattern = if self.regex {
+            format!("regex:{}", pattern)
+        } else if !self.extensions.is_empty() {
+            // Handle extension filter
+            if self.extensions.len() == 1 {
+                format!("ext:{}", self.extensions[0].trim_start_matches('.'))
+            } else {
+                // Multiple extensions - use pattern matching
+                pattern.to_string()
+            }
+        } else {
+            pattern.to_string()
+        };
+
+        let query = QueryParser::parse_with_options(
+            &query_pattern,
+            self.case_sensitive,
+        )?;
+
+        // Execute search
         eprintln!(
             "{} Searching for: {}",
             style("→").blue(),
-            style(pattern).green()
+            style(&query.pattern).green()
         );
 
-        println!(
-            "{} Search functionality is under development.",
-            style("⚠").yellow()
-        );
-        println!(
-            "{} Run {} to build your first index.",
-            style("ℹ").blue(),
-            style("mfind index build").cyan()
+        let start = std::time::Instant::now();
+        let results = engine.search(&query)?;
+        let elapsed = start.elapsed();
+
+        // Format and print results
+        let paths: Vec<String> = results.matches;
+
+        if paths.is_empty() {
+            println!(
+                "{} No files found matching: {}",
+                style("ℹ").blue(),
+                style(pattern).yellow()
+            );
+            return Ok(());
+        }
+
+        // Print results using output writer
+        writer.print_string_results(&paths);
+
+        // Print summary to stderr
+        eprintln!(
+            "{} Found {} files in {:?}",
+            style("✓").green(),
+            style(paths.len()).cyan(),
+            elapsed
         );
 
         Ok(())

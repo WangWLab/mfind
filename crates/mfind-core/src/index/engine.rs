@@ -6,7 +6,7 @@ use std::time::Duration;
 use async_trait::async_trait;
 
 use crate::event::FSEvent;
-use crate::query::{Query, SearchResult};
+use crate::query::{Query, SearchResult, QueryNode};
 use crate::Result;
 
 use super::{IndexStats, IndexHealth, FSTIndex, InodeMap, MetaCache};
@@ -193,8 +193,61 @@ impl IndexEngineTrait for IndexEngine {
     }
 
     fn search(&self, query: &Query) -> Result<SearchResult> {
-        // TODO: Implement full search
-        let matches = self.fst_index.prefix_search(&query.pattern)?;
+        use crate::query::ast::Pattern;
+
+        let matches = match &query.root {
+            QueryNode::Filename { pattern, .. } => {
+                match pattern {
+                    Pattern::Prefix(prefix) => {
+                        // For prefix search, we need to find paths containing the prefix
+                        // since paths are stored as full paths
+                        let all = self.fst_index.stream();
+                        all.into_iter()
+                            .filter(|path| {
+                                // Check if path contains the prefix or the filename starts with prefix
+                                path.contains(prefix) ||
+                                std::path::Path::new(path)
+                                    .file_name()
+                                    .and_then(|n| n.to_str())
+                                    .map(|name| name.starts_with(prefix))
+                                    .unwrap_or(false)
+                            })
+                            .collect()
+                    }
+                    Pattern::Regex(regex) => {
+                        // Use FST regex search
+                        self.fst_index.regex_search(regex)?
+                    }
+                    Pattern::Wildcard(w) => {
+                        // Convert wildcard to regex and search
+                        let regex = Pattern::wildcard_to_regex(w);
+                        self.fst_index.regex_search(&regex)?
+                    }
+                    Pattern::Exact(s) => {
+                        // Exact match - check if path exists
+                        let path_bytes = s.as_bytes();
+                        if self.fst_index.contains(path_bytes) {
+                            vec![s.clone()]
+                        } else {
+                            vec![]
+                        }
+                    }
+                }
+            }
+            QueryNode::Extension { ext } => {
+                // Filter paths by extension
+                let ext_pattern = format!(".{}", ext);
+                self.fst_index.stream()
+                    .into_iter()
+                    .filter(|path| path.ends_with(&ext_pattern))
+                    .collect()
+            }
+            _ => {
+                // Default: return all entries
+                self.fst_index.stream()
+            }
+        };
+
         let total = matches.len();
         Ok(SearchResult {
             matches,

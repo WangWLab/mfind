@@ -2,6 +2,9 @@
 
 use clap::Subcommand;
 use console::style;
+use mfind_core::{IndexEngine, IndexConfig};
+use mfind_core::index::engine::IndexEngineTrait;
+use std::path::PathBuf;
 
 /// Index management commands
 #[derive(Subcommand)]
@@ -98,28 +101,57 @@ pub struct IndexBuildCommand {
 
 impl IndexBuildCommand {
     pub async fn run(&self) -> anyhow::Result<()> {
-        println!(
+        // Parse paths
+        let roots: Vec<PathBuf> = self.paths.iter().map(PathBuf::from).collect();
+
+        // Build index configuration
+        let index_config = IndexConfig {
+            include_hidden: self.hidden,
+            gitignore_ignore: !self.no_gitignore,
+            exclude_patterns: self.exclude.clone(),
+            ..Default::default()
+        };
+
+        // Create index engine
+        let mut engine = IndexEngine::new(index_config)?;
+
+        eprintln!(
             "{} Building index for:",
             style("→").blue()
         );
 
-        for path in &self.paths {
-            println!("    {}", style(path).green());
+        for path in &roots {
+            eprintln!("    {}", style(path.display()).green());
         }
 
         if !self.exclude.is_empty() {
-            println!(
+            eprintln!(
                 "{} Excluding:",
                 style("→").blue()
             );
             for pattern in &self.exclude {
-                println!("    {}", style(pattern).yellow());
+                eprintln!("    {}", style(pattern).yellow());
             }
         }
+        eprintln!();
 
-        println!();
-        println!("{}", style("Index building is under development.").yellow());
-        println!("This is a placeholder for the actual implementation.");
+        // Build the index
+        let start = std::time::Instant::now();
+        let stats = engine.build(&roots).await?;
+        let elapsed = start.elapsed();
+
+        // Print summary
+        eprintln!(
+            "{} Indexed {} files in {:?}",
+            style("✓").green(),
+            style(stats.total_files).cyan(),
+            elapsed
+        );
+        eprintln!(
+            "{} Index status: {:?}",
+            style("ℹ").blue(),
+            stats.health
+        );
 
         Ok(())
     }
