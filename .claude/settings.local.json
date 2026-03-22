@@ -5,7 +5,11 @@
       "Bash(python3 test_python.py)",
       "Bash(git commit:*)",
       "Bash(git push:*)",
-      "Bash(cargo test:*)"
+      "Bash(cargo test:*)",
+      "Bash(cargo run:*)",
+      "Bash(cargo build:*)",
+      "Bash(git add:*)",
+      "Bash(git remote:*)"
     ]
   }
 }

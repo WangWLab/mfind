@@ -899,6 +899,7 @@ dependencies = [
  "mfind-core",
  "serde",
  "serde_json",
+ "tempfile",
  "tokio",
  "toml",
  "tracing",

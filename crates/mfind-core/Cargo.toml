@@ -60,3 +60,8 @@ serde_json.workspace = true
 tempfile.workspace = true
 tokio-test.workspace = true
 criterion.workspace = true
+
+[[bench]]
+name = "search_bench"
+path = "../../tests/benchmarks/search_bench.rs"
+harness = false
