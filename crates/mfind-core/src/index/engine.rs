@@ -1,7 +1,7 @@
 //! Index engine trait and implementation
 
 use std::path::PathBuf;
-use std::time::Duration;
+use std::time::{Duration, SystemTime};
 
 use async_trait::async_trait;
 
@@ -176,19 +176,120 @@ impl IndexEngineTrait for IndexEngine {
     }
 
     async fn update(&mut self, events: &[FSEvent]) -> Result<IndexStats> {
-        // TODO: Implement incremental update
+        use crate::event::FSEventType;
+
+        let mut modified = false;
+
         for event in events {
-            match event.event_type {
-                crate::event::FSEventType::Create => {
-                    self.fst_index.insert(event.path.to_string_lossy().as_bytes())?;
+            let path_bytes = event.path.to_string_lossy().as_bytes().to_vec();
+
+            match &event.event_type {
+                FSEventType::Create => {
+                    // Add new path to FST index
+                    if let Ok(new_fst) = self.fst_index.insert_and_rebuild(&path_bytes) {
+                        self.fst_index = new_fst;
+                        modified = true;
+                    }
+
+                    // Update inode map
+                    if let Some(inode) = event.inode {
+                        self.inode_map.insert(inode, event.path.clone());
+                    }
+
+                    // Update metadata cache
+                    if self.config.index_metadata {
+                        if let Ok(metadata) = std::fs::metadata(&event.path) {
+                            self.meta_cache.insert(
+                                event.inode.unwrap_or(0),
+                                crate::index::meta_cache::FileMetadata {
+                                    size: metadata.len(),
+                                    modified: metadata.modified().unwrap_or(SystemTime::UNIX_EPOCH),
+                                    is_dir: metadata.is_dir(),
+                                },
+                            );
+                        }
+                    }
                 }
-                crate::event::FSEventType::Delete => {
-                    self.fst_index
-                        .remove(event.path.to_string_lossy().as_bytes())?;
+                FSEventType::Delete => {
+                    // Remove from FST index
+                    if let Ok(new_fst) = self.fst_index.remove_and_rebuild(&path_bytes) {
+                        self.fst_index = new_fst;
+                        modified = true;
+                    }
+
+                    // Remove from inode map
+                    if let Some(inode) = event.inode {
+                        self.inode_map.remove(inode);
+                    }
+
+                    // Remove from metadata cache
+                    if let Some(inode) = event.inode {
+                        self.meta_cache.remove(inode);
+                    }
+
+                    // Update stats
+                    if self.stats.total_files > 0 {
+                        self.stats.total_files -= 1;
+                    }
                 }
-                _ => {}
+                FSEventType::Modify | FSEventType::Metadata => {
+                    // Update metadata cache for modifications
+                    if self.config.index_metadata {
+                        if let Ok(metadata) = std::fs::metadata(&event.path) {
+                            self.meta_cache.insert(
+                                event.inode.unwrap_or(0),
+                                crate::index::meta_cache::FileMetadata {
+                                    size: metadata.len(),
+                                    modified: metadata.modified().unwrap_or(SystemTime::UNIX_EPOCH),
+                                    is_dir: metadata.is_dir(),
+                                },
+                            );
+                        }
+                    }
+                }
+                FSEventType::Rename { from, to } => {
+                    // Remove old path
+                    let from_bytes = from.to_string_lossy().as_bytes().to_vec();
+                    if let Ok(new_fst) = self.fst_index.remove_and_rebuild(&from_bytes) {
+                        self.fst_index = new_fst;
+                    }
+
+                    // Add new path
+                    let to_bytes = to.to_string_lossy().as_bytes().to_vec();
+                    if let Ok(new_fst) = self.fst_index.insert_and_rebuild(&to_bytes) {
+                        self.fst_index = new_fst;
+                        modified = true;
+                    }
+
+                    // Update inode map (try to preserve inode if available)
+                    if let Some(inode) = event.inode {
+                        self.inode_map.remove(inode);
+                        self.inode_map.insert(inode, to.clone());
+                    }
+
+                    // Update metadata cache
+                    if self.config.index_metadata {
+                        if let Ok(metadata) = std::fs::metadata(to) {
+                            self.meta_cache.insert(
+                                event.inode.unwrap_or(0),
+                                crate::index::meta_cache::FileMetadata {
+                                    size: metadata.len(),
+                                    modified: metadata.modified().unwrap_or(SystemTime::UNIX_EPOCH),
+                                    is_dir: metadata.is_dir(),
+                                },
+                            );
+                        }
+                    }
+                }
             }
         }
+
+        // Update timestamp if modified
+        if modified {
+            self.stats.last_update = Some(SystemTime::now());
+            self.stats.health = IndexHealth::Healthy;
+        }
+
         Ok(self.stats.clone())
     }
 

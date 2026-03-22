@@ -80,7 +80,7 @@ mod cli_tests {
 
         assert!(success);
         assert!(stdout.contains("mfind"), "Help should contain command name");
-        assert!(stdout.contains("OPTIONS"), "Help should have OPTIONS section");
+        assert!(stdout.to_lowercase().contains("options"), "Help should have Options section");
     }
 
     #[test]

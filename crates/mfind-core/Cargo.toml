@@ -56,6 +56,11 @@ num_cpus.workspace = true
 lru.workspace = true
 serde_json.workspace = true
 
+# macOS FSEvents
+[target.'cfg(target_os = "macos")'.dependencies]
+core-foundation = "0.10"
+core-foundation-sys = "0.8"
+
 [dev-dependencies]
 tempfile.workspace = true
 tokio-test.workspace = true

@@ -73,6 +73,31 @@ impl FSTIndex {
         Ok(())
     }
 
+    /// Insert and rebuild, returning new FST
+    pub fn insert_and_rebuild(&self, path: &[u8]) -> Result<Self> {
+        let mut paths: Vec<Vec<u8>> = self
+            .stream()
+            .into_iter()
+            .map(|s| s.into_bytes())
+            .collect();
+        paths.push(path.to_vec());
+        paths.sort();
+
+        Self::build(&paths)
+    }
+
+    /// Remove and rebuild, returning new FST
+    pub fn remove_and_rebuild(&self, path: &[u8]) -> Result<Self> {
+        let paths: Vec<Vec<u8>> = self
+            .stream()
+            .into_iter()
+            .map(|s| s.into_bytes())
+            .filter(|p| p.as_slice() != path)
+            .collect();
+
+        Self::build(&paths)
+    }
+
     /// Prefix search
     pub fn prefix_search(&self, prefix: &str) -> Result<Vec<String>> {
         let prefix_bytes = prefix.as_bytes();
