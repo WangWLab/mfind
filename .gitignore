@@ -1,0 +1,27 @@
+# Build artifacts
+/target/
+**/target/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Test files
+*.pem
+*.key
+
+# Logs
+*.log
+
+# Coverage
+*.lcov
+coverage/
+
+# Profiling
+perf.data
+perf.data.old
+flamegraph.svg

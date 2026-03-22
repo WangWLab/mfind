@@ -1,0 +1,8 @@
+# Clippy configuration
+
+# Allow clippy to suggest more aggressive optimizations
+allow-unwrap-in-tests = false
+
+# Warn about excessive lines in functions
+too-many-arguments-threshold = 10
+too-many-lines-threshold = 100

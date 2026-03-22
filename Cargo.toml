@@ -1,0 +1,100 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/mfind-core",
+    "crates/mfind-cli",
+    "crates/mfind-tui",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["mfind Contributors"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/mfind/mfind"
+homepage = "https://github.com/mfind/mfind"
+keywords = ["search", "file", "macos", "filesystem", "cli"]
+categories = ["command-line-utilities", "filesystem"]
+
+[workspace.dependencies]
+# Core
+tokio = { version = "1", features = ["full"] }
+async-trait = "0.1"
+thiserror = "1"
+anyhow = "1"
+
+# Filesystem
+notify = "6"
+walkdir = "2"
+ignore = "0.4"
+path-absolutize = "3"
+dunce = "1"
+
+# Index data structures
+fst = "0.4"
+dashmap = "5"
+rustc-hash = "1"
+xxhash-rust = { version = "0.8", features = ["xxh3"] }
+
+# Search
+regex = "1"
+fuzzy-matcher = "0.3"
+
+# Concurrency
+rayon = "1"
+crossbeam = "0.8"
+flume = "0.11"
+
+# Persistence
+lmdb-rkv = "0.14"
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+bincode = "1"
+
+# CLI
+clap = { version = "4", features = ["derive", "env"] }
+clap_complete = "4"
+dialoguer = "0.11"
+indicatif = "0.17"
+console = "0.15"
+
+# TUI
+ratatui = "0.24"
+crossterm = "0.27"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+tracing-appender = "0.2"
+
+# Config
+directories = "5"
+
+# Testing
+criterion = "0.5"
+proptest = "1"
+tempfile = "3"
+tokio-test = "0.4"
+
+# Additional dependencies for CLI
+serde_json = "1"
+toml = "0.8"
+dirs = "5"
+num_cpus = "1"
+lru = "0.12"
+
+[workspace.dependencies]
+num_cpus = "1"
+lru = "0.12"
+serde_json = "1"
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+
+[profile.bench]
+lto = true
+codegen-units = 1
