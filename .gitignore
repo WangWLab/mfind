@@ -27,3 +27,10 @@ perf.data.old
 flamegraph.svg
 
 .claude
+
+# Test data
+/test_data/
+*.bin
+
+# Scripts output
+/scripts/output/
