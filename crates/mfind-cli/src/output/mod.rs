@@ -5,9 +5,10 @@ use console::style;
 use serde::Serialize;
 
 /// Output format options
-#[derive(Debug, Clone, Copy, ValueEnum)]
+#[derive(Debug, Clone, Copy, ValueEnum, Default)]
 pub enum OutputFormat {
     /// Plain list output
+    #[default]
     List,
 
     /// Table format with details
@@ -31,7 +32,7 @@ impl OutputWriter {
     }
 
     /// Print search results
-    pub fn print_results<T: Serialize>(&self, results: &[T]) {
+    pub fn print_results<T: Serialize + std::fmt::Debug>(&self, results: &[T]) {
         match self.format {
             OutputFormat::List => self.print_list(results),
             OutputFormat::Table => self.print_table(results),
@@ -40,14 +41,14 @@ impl OutputWriter {
         }
     }
 
-    fn print_list<T: Serialize>(&self, results: &[T]) {
+    fn print_list<T: Serialize + std::fmt::Debug>(&self, results: &[T]) {
         for result in results {
             // For now, just debug print
             println!("{:?}", result);
         }
     }
 
-    fn print_table<T: Serialize>(&self, results: &[T]) {
+    fn print_table<T: Serialize + std::fmt::Debug>(&self, results: &[T]) {
         for result in results {
             println!("{:?}", result);
         }
@@ -60,7 +61,7 @@ impl OutputWriter {
         }
     }
 
-    fn print_null<T: Serialize>(&self, results: &[T]) {
+    fn print_null<T: Serialize + std::fmt::Debug>(&self, results: &[T]) {
         for result in results {
             print!("{:?}\0", result);
         }

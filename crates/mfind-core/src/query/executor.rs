@@ -1,7 +1,7 @@
 //! Query executor
 
 use crate::query::ast::{Query, QueryNode, Pattern};
-use crate::query::{SearchResult, SearchResultItem};
+use crate::query::SearchResult;
 use crate::Result;
 
 use super::super::index::FSTIndex;
@@ -22,10 +22,11 @@ impl<'a> QueryExecutor<'a> {
         let start = std::time::Instant::now();
 
         let matches = self.execute_node(&query.root)?;
+        let total = matches.len();
 
         Ok(SearchResult {
             matches,
-            total: matches.len(),
+            total,
             time_ms: start.elapsed().as_millis(),
         })
     }

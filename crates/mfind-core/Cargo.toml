@@ -39,6 +39,7 @@ fuzzy-matcher.workspace = true
 rayon.workspace = true
 crossbeam.workspace = true
 flume.workspace = true
+parking_lot = "0.12"
 
 # Persistence
 lmdb-rkv.workspace = true

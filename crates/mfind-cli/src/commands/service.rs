@@ -28,11 +28,11 @@ pub enum ServiceCommand {
 impl ServiceCommand {
     pub async fn run(&self) -> anyhow::Result<()> {
         match self {
-            ServiceCommand::Install => Self::install(),
-            ServiceCommand::Start => Self::start(),
-            ServiceCommand::Stop => Self::stop(),
-            ServiceCommand::Uninstall => Self::uninstall(),
-            ServiceCommand::Status => Self::status(),
+            ServiceCommand::Install => self.install(),
+            ServiceCommand::Start => self.start(),
+            ServiceCommand::Stop => self.stop(),
+            ServiceCommand::Uninstall => self.uninstall(),
+            ServiceCommand::Status => self.status(),
             ServiceCommand::Logs(cmd) => cmd.run(),
         }
     }

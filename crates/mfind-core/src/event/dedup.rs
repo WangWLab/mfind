@@ -1,6 +1,6 @@
 //! Event deduplication
 
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::time::{Duration, Instant};
 
 use crate::fs::FSEvent;

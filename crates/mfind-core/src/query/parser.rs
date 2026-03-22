@@ -1,6 +1,6 @@
 //! Query parser
 
-use crate::query::ast::{Query, QueryNode, Pattern};
+use crate::query::ast::{Query, QueryNode};
 use crate::Result;
 
 /// Query parser
@@ -44,7 +44,7 @@ impl QueryParser {
     }
 
     /// Parse with options
-    pub fn parse_with_options(input: &str, case_sensitive: bool) -> Result<Query> {
+    pub fn parse_with_options(input: &str, _case_sensitive: bool) -> Result<Query> {
         let query = Self::parse(input)?;
         // TODO: Apply case sensitivity
         Ok(query)

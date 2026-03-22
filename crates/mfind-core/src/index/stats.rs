@@ -24,9 +24,10 @@ pub struct IndexStats {
 }
 
 /// Index health status
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum IndexHealth {
     /// Index is healthy and up-to-date
+    #[default]
     Healthy,
     /// Index needs refresh
     Stale,

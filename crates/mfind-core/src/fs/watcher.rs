@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use std::time::SystemTime;
 
 /// Filesystem event type
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FSEventType {
     /// File or directory created
     Create,

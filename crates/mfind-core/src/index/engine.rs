@@ -154,7 +154,7 @@ impl IndexEngineTrait for IndexEngine {
             if self.config.index_metadata {
                 self.meta_cache.insert(
                     inode,
-                    crate::query::FileMetadata {
+                    crate::index::meta_cache::FileMetadata {
                         size: entry.size,
                         modified: entry.modified,
                         is_dir: entry.is_dir,
@@ -195,16 +195,17 @@ impl IndexEngineTrait for IndexEngine {
     fn search(&self, query: &Query) -> Result<SearchResult> {
         // TODO: Implement full search
         let matches = self.fst_index.prefix_search(&query.pattern)?;
+        let total = matches.len();
         Ok(SearchResult {
             matches,
-            total: matches.len(),
+            total,
             time_ms: 0,
         })
     }
 
     fn search_stream(
         &self,
-        query: &Query,
+        _query: &Query,
     ) -> flume::Receiver<Result<crate::query::SearchResultItem>> {
         let (tx, rx) = flume::unbounded();
 

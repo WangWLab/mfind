@@ -1,6 +1,5 @@
 //! Inode to path mapping
 
-use std::collections::HashMap;
 use std::path::PathBuf;
 
 use dashmap::DashMap;

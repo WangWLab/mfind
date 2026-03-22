@@ -3,8 +3,6 @@
 use std::time::SystemTime;
 
 use dashmap::DashMap;
-use lru::LruCache;
-use std::num::NonZeroUsize;
 
 /// File metadata
 #[derive(Debug, Clone)]
@@ -28,7 +26,7 @@ impl MetaCache {
     }
 
     /// Create with capacity
-    pub fn with_capacity(capacity: usize) -> Self {
+    pub fn with_capacity(_capacity: usize) -> Self {
         Self {
             cache: DashMap::new(),
         }

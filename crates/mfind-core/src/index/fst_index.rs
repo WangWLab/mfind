@@ -1,8 +1,6 @@
 //! FST (Finite State Transducer) based index for memory-efficient string storage
 
-use std::io::Cursor;
-
-use fst::{MapBuilder, Set, SetBuilder};
+use fst::{Set, Streamer};
 
 use crate::Result;
 
@@ -20,14 +18,14 @@ impl FSTIndex {
 
     /// Build FST index from sorted paths
     pub fn build(paths: &[Vec<u8>]) -> Result<Self> {
-        let mut builder = SetBuilder::memory();
+        let mut builder = fst::SetBuilder::memory();
 
         for path in paths {
             builder.insert(path)?;
         }
 
         let data = builder.into_inner()?;
-        let set = Set::new(Cursor::new(data))?;
+        let set = Set::new(data)?;
 
         Ok(Self { set })
     }
@@ -44,33 +42,33 @@ impl FSTIndex {
         paths.push(path.to_vec());
         paths.sort();
 
-        let mut builder = SetBuilder::memory();
+        let mut builder = fst::SetBuilder::memory();
         for p in &paths {
             builder.insert(p)?;
         }
 
         let data = builder.into_inner()?;
-        self.set = Set::new(Cursor::new(data))?;
+        self.set = Set::new(data)?;
 
         Ok(())
     }
 
     /// Remove a path
     pub fn remove(&mut self, path: &[u8]) -> Result<()> {
-        let mut paths: Vec<Vec<u8>> = self
+        let paths: Vec<Vec<u8>> = self
             .stream()
             .into_iter()
             .map(|s| s.into_bytes())
             .filter(|p| p.as_slice() != path)
             .collect();
 
-        let mut builder = SetBuilder::memory();
+        let mut builder = fst::SetBuilder::memory();
         for p in &paths {
             builder.insert(p)?;
         }
 
         let data = builder.into_inner()?;
-        self.set = Set::new(Cursor::new(data))?;
+        self.set = Set::new(data)?;
 
         Ok(())
     }
@@ -81,10 +79,10 @@ impl FSTIndex {
 
         // Find the range of keys starting with prefix
         let mut results = Vec::new();
-
-        for key in self.set.stream() {
+        let mut stream = self.set.stream();
+        while let Some(key) = stream.next() {
             if key.starts_with(prefix_bytes) {
-                if let Ok(s) = std::str::from_utf8(&key) {
+                if let Ok(s) = std::str::from_utf8(key) {
                     results.push(s.to_string());
                 }
             }
@@ -96,9 +94,9 @@ impl FSTIndex {
     /// Regex search
     pub fn regex_search(&self, pattern: &regex::Regex) -> Result<Vec<String>> {
         let mut results = Vec::new();
-
-        for key in self.set.stream() {
-            if let Ok(s) = std::str::from_utf8(&key) {
+        let mut stream = self.set.stream();
+        while let Some(key) = stream.next() {
+            if let Ok(s) = std::str::from_utf8(key) {
                 if pattern.is_match(s) {
                     results.push(s.to_string());
                 }
@@ -115,7 +113,7 @@ impl FSTIndex {
 
     /// Get the number of entries
     pub fn len(&self) -> u64 {
-        self.set.len()
+        self.set.len() as u64
     }
 
     /// Check if empty
@@ -125,10 +123,14 @@ impl FSTIndex {
 
     /// Get all entries as a stream
     pub fn stream(&self) -> Vec<String> {
-        self.set
-            .stream()
-            .filter_map(|key| std::str::from_utf8(&key).map(|s| s.to_string()).ok())
-            .collect()
+        let mut results = Vec::new();
+        let mut stream = self.set.stream();
+        while let Some(key) = stream.next() {
+            if let Ok(s) = std::str::from_utf8(key) {
+                results.push(s.to_string());
+            }
+        }
+        results
     }
 
     /// Get memory usage estimate
@@ -143,7 +145,7 @@ impl FSTIndex {
 
     /// Import from bytes
     pub fn from_bytes(data: &[u8]) -> Result<Self> {
-        let set = Set::new(data)?;
+        let set = Set::new(data.to_vec())?;
         Ok(Self { set })
     }
 }

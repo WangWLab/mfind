@@ -56,6 +56,29 @@ pub enum Pattern {
     Regex(regex::Regex),
 }
 
+impl Pattern {
+    /// Convert wildcard pattern to regex
+    pub fn wildcard_to_regex(pattern: &str) -> regex::Regex {
+        let mut regex_pattern = String::with_capacity(pattern.len() * 2);
+        regex_pattern.push('^');
+
+        for c in pattern.chars() {
+            match c {
+                '*' => regex_pattern.push_str(".*"),
+                '?' => regex_pattern.push('.'),
+                '.' | '^' | '$' | '+' | '{' | '}' | '[' | ']' | '|' | '\\' | '(' | ')' => {
+                    regex_pattern.push('\\');
+                    regex_pattern.push(c);
+                }
+                _ => regex_pattern.push(c),
+            }
+        }
+
+        regex_pattern.push('$');
+        regex::Regex::new(&regex_pattern).unwrap_or_else(|_| regex::Regex::new("^$").unwrap())
+    }
+}
+
 /// Parsed query
 #[derive(Debug, Clone)]
 pub struct Query {

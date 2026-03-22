@@ -4,7 +4,6 @@ use std::path::{Path, PathBuf};
 use std::time::SystemTime;
 
 use ignore::WalkBuilder;
-use rayon::prelude::*;
 
 use crate::Result;
 
@@ -88,47 +87,42 @@ impl FileSystemScanner {
                 builder.add_ignore(pattern.clone());
             }
 
-            let walk = builder.build_parallel();
+            // Collect entries from the walker
+            let mut final_entries = Vec::new();
+            for entry_result in builder.build() {
+                let entry = match entry_result {
+                    Ok(e) => e,
+                    Err(_) => continue,
+                };
 
-            let entries: Vec<ScanEntry> = walk
-                .run()
-                .par_bridge()
-                .filter_map(|entry| {
-                    let entry = match entry {
-                        Ok(e) => e,
-                        Err(_) => return None,
-                    };
+                let path = entry.path().to_path_buf();
+                let metadata = match entry.metadata() {
+                    Ok(m) => m,
+                    Err(_) => continue,
+                };
 
-                    let path = entry.path().to_path_buf();
-                    let metadata = match entry.metadata() {
-                        Ok(m) => m,
-                        Err(_) => return None,
-                    };
+                let is_dir = metadata.is_dir();
+                let size = if is_dir { 0 } else { metadata.len() };
+                let modified = metadata.modified().unwrap_or(SystemTime::UNIX_EPOCH);
 
-                    let is_dir = metadata.is_dir();
-                    let size = if is_dir { 0 } else { metadata.len() };
-                    let modified = metadata.modified().unwrap_or(SystemTime::UNIX_EPOCH);
+                #[cfg(unix)]
+                let inode = {
+                    use std::os::unix::fs::MetadataExt;
+                    Some(metadata.ino())
+                };
+                #[cfg(not(unix))]
+                let inode = None;
 
-                    // Get inode (platform specific)
-                    #[cfg(unix)]
-                    let inode = {
-                        use std::os::unix::fs::MetadataExt;
-                        Some(metadata.ino())
-                    };
-                    #[cfg(not(unix))]
-                    let inode = None;
+                final_entries.push(ScanEntry {
+                    path,
+                    inode,
+                    size,
+                    modified,
+                    is_dir,
+                });
+            }
 
-                    Some(ScanEntry {
-                        path,
-                        inode,
-                        size,
-                        modified,
-                        is_dir,
-                    })
-                })
-                .collect();
-
-            entries
+            final_entries
         })
         .await?;
 

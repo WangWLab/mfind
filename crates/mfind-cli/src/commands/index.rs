@@ -35,7 +35,7 @@ impl IndexCommand {
     pub async fn run(&self) -> anyhow::Result<()> {
         match self {
             IndexCommand::Build(cmd) | IndexCommand::Rebuild(cmd) => cmd.run().await,
-            IndexCommand::Status => Self::status(),
+            IndexCommand::Status => self.status(),
             IndexCommand::Pause => {
                 println!("{}", style("Indexing paused").yellow());
                 Ok(())
@@ -46,7 +46,7 @@ impl IndexCommand {
             }
             IndexCommand::Export(cmd) => cmd.run().await,
             IndexCommand::Import(cmd) => cmd.run().await,
-            IndexCommand::Clear => Self::clear(),
+            IndexCommand::Clear => self.clear(),
         }
     }
 

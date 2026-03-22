@@ -5,8 +5,6 @@ use std::collections::HashSet;
 
 use crate::Result;
 
-use super::{FileSystemMonitor, FileSystemScanner};
-
 /// Filesystem type
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum FileSystemType {

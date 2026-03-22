@@ -22,10 +22,10 @@ pub enum ConfigCommand {
 impl ConfigCommand {
     pub async fn run(&self) -> anyhow::Result<()> {
         match self {
-            ConfigCommand::Show => Self::show(),
-            ConfigCommand::Edit => Self::edit(),
-            ConfigCommand::Reset => Self::reset(),
-            ConfigCommand::Path => Self::path(),
+            ConfigCommand::Show => self.show(),
+            ConfigCommand::Edit => self.edit(),
+            ConfigCommand::Reset => self.reset(),
+            ConfigCommand::Path => self.path(),
         }
     }
 

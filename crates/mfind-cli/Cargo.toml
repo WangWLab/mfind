@@ -26,6 +26,11 @@ dialoguer.workspace = true
 
 # Serialization
 serde.workspace = true
+serde_json.workspace = true
+toml.workspace = true
+
+# Config
+dirs.workspace = true
 
 # Logging
 tracing.workspace = true
