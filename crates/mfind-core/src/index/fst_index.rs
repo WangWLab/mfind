@@ -176,9 +176,10 @@ mod tests {
 
     #[test]
     fn test_prefix_search() {
+        // Paths must be in lexicographic order for FST
         let paths = vec![
-            b"/app/main.rs".to_vec(),
             b"/app/lib.rs".to_vec(),
+            b"/app/main.rs".to_vec(),
             b"/src/main.rs".to_vec(),
         ];
 

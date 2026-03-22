@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(git init:*)",
-      "Bash(python3 test_python.py)"
+      "Bash(python3 test_python.py)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)",
+      "Bash(cargo test:*)"
     ]
   }
 }

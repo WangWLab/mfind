@@ -54,6 +54,7 @@ impl QueryParser {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::query::ast::Pattern;
 
     #[test]
     fn test_parse_prefix() {
@@ -70,7 +71,13 @@ mod tests {
     #[test]
     fn test_parse_regex() {
         let query = QueryParser::parse("regex:.*\\.txt$").unwrap();
-        assert!(query.pattern.starts_with("regex:"));
+        // Check that it created a Regex pattern
+        match query.root {
+            QueryNode::Filename { pattern, .. } => {
+                assert!(matches!(pattern, Pattern::Regex(_)));
+            }
+            _ => panic!("Expected Filename node with Regex pattern"),
+        }
     }
 
     #[test]

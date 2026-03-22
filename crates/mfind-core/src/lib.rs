@@ -5,22 +5,6 @@
 //! - FST-based index for memory-efficient storage
 //! - Real-time monitoring via FSEvents
 //! - Flexible query parsing and execution
-//!
-//! # Example
-//!
-//! ```rust,no_run
-//! use mfind_core::index::{IndexEngine, IndexConfig};
-//! use mfind_core::query::{Query, QueryParser};
-//!
-//! # async fn example() -> anyhow::Result<()> {
-//! let mut engine = IndexEngine::new(IndexConfig::default())?;
-//! engine.build(&["/Users".into()]).await?;
-//!
-//! let query = QueryParser::parse("hello")?;
-//! let results = engine.search(&query)?;
-//! # Ok(())
-//! # }
-//! ```
 
 pub mod index;
 pub mod query;
