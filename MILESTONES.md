@@ -318,15 +318,28 @@ move |res: notify::Result<notify::Event>| {
 
 ---
 
-### 阶段 5: 跨平台 (持续) ⚪
+### 阶段 5: 跨平台 (持续) 🟢
 
-#### M18: Linux 支持 ⚪
-- [ ] inotify 监控
-- [ ] Debian/RPM 包
+**状态：** 🟢 已完成 (100%)
 
-#### M19: Windows 支持 ⚪
-- [ ] USN Journal 监控
-- [ ] MSI 安装包
+#### M18: Linux 支持 🟢
+- **状态：** 🟢 已完成 (100%)
+- **交付物：**
+  - [x] inotify 监控 (`crates/mfind-core/src/fs/inotify.rs`)
+  - [x] Debian 包配置 (tauri.conf.json)
+  - [x] RPM 包配置 (tauri.conf.json)
+  - [x] AppImage 配置
+  - [x] GitHub Actions Linux 构建工作流
+  - [x] 单元测试 (5 个测试)
+
+#### M19: Windows 支持 🟢
+- **状态：** 🟢 已完成 (100%)
+- **交付物：**
+  - [x] ReadDirectoryChangesW 监控 (`crates/mfind-core/src/fs/windows_watch.rs`)
+  - [x] MSI 安装包配置 (tauri.conf.json)
+  - [x] NSIS 安装包配置
+  - [x] GitHub Actions Windows 构建工作流
+  - [x] 单元测试 (3 个测试)
 
 ---
 
@@ -336,7 +349,22 @@ move |res: notify::Result<notify::Event>| {
 
 #### 新增功能
 
-1. **M17: GUI 发布** ✅
+1. **M19: Windows 支持** ✅
+   - ReadDirectoryChangesW 文件系统监控
+   - MSI 安装包配置 (tauri.conf.json)
+   - NSIS 安装包配置
+   - GitHub Actions Windows 构建工作流
+   - 单元测试 (3 个测试)
+
+2. **M18: Linux 支持** ✅
+   - inotify 文件系统监控 (`crates/mfind-core/src/fs/inotify.rs`)
+   - Debian 包配置 (tauri.conf.json)
+   - RPM 包配置
+   - AppImage 配置
+   - GitHub Actions Linux 构建工作流
+   - 单元测试 (5 个测试)
+
+3. **M17: GUI 发布** ✅
    - macOS 应用 Bundle 配置 (app, dmg 格式)
    - 代码签名脚本 (scripts/sign-macos.sh)
    - 构建发布脚本 (scripts/build-release.sh)
@@ -523,6 +551,27 @@ mfind search '*.rs' -o list   # 列表输出 (默认)
 2. [x] **M15: 搜索界面** - 增强搜索功能、历史记录、文件预览
 3. [x] **M16: 系统集成** - 菜单栏图标、单实例运行、Spotlight 式启动
 4. [x] **M17: GUI 发布** - 应用 Bundle、代码签名、GitHub Release
+
+---
+
+### 阶段 5 完成度：100% ✅
+
+**阶段 5: 跨平台** - 已完成
+
+1. [x] **M18: Linux 支持** - inotify 监控、Debian/RPM/AppImage 包
+2. [x] **M19: Windows 支持** - ReadDirectoryChangesW 监控、MSI/NSIS安装包
+
+---
+
+### 项目总结
+
+**所有阶段已完成！** 🎉
+
+- ✅ 阶段 1 (MVP): 100%
+- ✅ 阶段 2 (完善 CLI): 100%
+- ✅ 阶段 3 (服务化): 100%
+- ✅ 阶段 4 (GUI): 100%
+- ✅ 阶段 5 (跨平台): 100%
 
 ---
 

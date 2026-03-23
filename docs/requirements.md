@@ -884,13 +884,22 @@ mfind/
   - ✅ GitHub Actions CI/CD 工作流
   - ✅ 构建和发布脚本
 
-### 阶段 5: 跨平台 (持续)
+### 阶段 5: 跨平台 (持续) 🟢
 
-| 阶段 | 平台 | 任务 |
-|------|------|------|
-| P1 | macOS | 优化完善 |
-| P2 | Linux | inotify 支持 |
-| P3 | Windows | USN Journal 支持 |
+**状态：** 🟢 已完成 (100%)
+
+| 阶段 | 平台 | 任务 | 状态 |
+|------|------|------|------|
+| P1 | macOS | 优化完善 | ✅ |
+| P2 | Linux | inotify 支持 | ✅ |
+| P3 | Windows | ReadDirectoryChangesW 支持 | ✅ |
+
+**交付物：**
+- ✅ Linux inotify 文件系统监控
+- ✅ Windows ReadDirectoryChangesW 文件系统监控
+- ✅ Debian/RPM/AppImage 包配置
+- ✅ MSI/NSIS 安装包配置
+- ✅ 跨平台 GitHub Actions 工作流
 
 ---
 

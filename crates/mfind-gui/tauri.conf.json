@@ -30,7 +30,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["app", "dmg", "appimage"],
+    "targets": ["app", "dmg", "appimage", "deb", "rpm", "msi"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -45,9 +45,30 @@
       "signingIdentity": null,
       "entitlements": null
     },
+    "linux": {
+      "deb": {
+        "depends": ["libgtk-3-0", "libwebkit2gtk-4.0-37", "libappindicator3-1"],
+        "files": {}
+      },
+      "rpm": {
+        "depends": ["gtk3", "webkit2gtk3", "libappindicator-gtk3"],
+        "release": "1"
+      },
+      "appimage": {
+        "bundleMediaFramework": true
+      }
+    },
+    "windows": {
+      "wix": null,
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": ["SimpChinese", "English"],
+        "displayLanguageSelector": false
+      }
+    },
     "category": "Utility",
-    "shortDescription": "Fast file search tool for macOS",
-    "longDescription": "mfind is a high-performance file search tool for macOS, featuring instant search results, real-time index updates, and system integration.",
+    "shortDescription": "Fast file search tool",
+    "longDescription": "mfind is a high-performance file search tool featuring instant search results, real-time index updates, and cross-platform support.",
     "externalBin": [],
     "resources": [],
     "copyright": "Apache 2.0"
