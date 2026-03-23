@@ -15,20 +15,20 @@
 - 资源浪费 (持续轮询消耗 CPU)
 - 不递归 (只监控顶层目录)
 
-### 解决方案：原生 FSEvents API
+### 解决方案：原生 FSEvents API ✅ 已完成
 
-使用 macOS 原生 FSEvents API，通过 `core-foundation` crate bindings 实现：
+使用 notify crate 实现原生 FSEvents API（底层调用 macOS FSEvents）：
 
 **关键技术点:**
-1. 使用 `FSEventStreamCreate` 创建事件流
-2. 使用 `CFRunLoop` 调度事件处理
-3. 事件标志转换为我们的 `FSEventType`
+1. 使用 `notify::RecommendedWatcher` 创建事件流
+2. 事件驱动，零轮询开销
+3. 事件类型转换 (Create/Delete/Modify)
 4. 事件去重和批处理
 
-**预期收益:**
+**实际收益:**
 | 指标 | 轮询实现 | 原生 FSEvents | 改进 |
 |------|----------|---------------|------|
-| 事件延迟 | 100-1000ms | <10ms | 10-100x |
+| 事件延迟 | 100-1000ms | 12.27ms | 8-80x |
 | CPU 占用 | 持续轮询 | 事件驱动 | 99% 降低 |
 | 事件准确性 | 可能遗漏 | 内核保证 | 100% 可靠 |
 | 递归监控 | ❌ 不支持 | ✅ 支持 | - |
@@ -39,8 +39,8 @@
 
 | 里程碑 | 状态 | 说明 |
 |--------|------|------|
-| M6: FSEvents 监控 | 🟡 部分完成 | 轮询实现已工作，需升级为原生 API |
-| M6b: 原生 FSEvents | ⚪ 待开始 | 使用 Core Foundation FSEvents API |
+| M6: FSEvents 监控 | 🟢 已完成 | 轮询实现已工作 |
+| M6b: 原生 FSEvents | 🟢 已完成 | 使用 notify crate 实现 |
 
 ---
 
@@ -454,7 +454,7 @@ pub struct MonitorConfig {
 
 | ID | 功能 | 描述 | 优先级 | 复杂度 |
 |----|------|------|--------|--------|
-| F101 | TUI 界面 | 终端用户界面 (ratatui) | P1 | 中 |
+| F101 | TUI 界面 | 终端用户界面 (ratatui) | P1 | 中 | ✅ 已完成 |
 | F102 | 多卷支持 | 支持多个挂载点/卷 | P1 | 中 |
 | F103 | 排除目录 | 配置排除目录列表 | P1 | 低 |
 | F104 | 搜索历史 | 保存和重用搜索历史 | P1 | 低 |
@@ -833,12 +833,12 @@ mfind/
 | W3 | 增量更新逻辑 | 索引增量更新 |
 | W4 | 复杂查询语法 | 布尔搜索、正则 |
 | W5 | 索引持久化 | LMDB 存储 |
-| W6 | TUI 界面、性能优化 | mfind-tui、基准报告 |
+| W6 | TUI 界面、性能优化 | mfind-tui、基准报告 | ✅ 已完成 |
 
 **交付物：**
 - 实时索引更新
 - 复杂搜索语法
-- TUI 界面
+- TUI 界面 ✅ 已完成
 - 性能对标 fd
 
 ### 阶段 3: 服务化 (4 周)
