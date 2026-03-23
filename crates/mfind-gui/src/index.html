@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>mfind - Fast File Search</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🔍 mfind</h1>
+            <p class="subtitle">Fast File Search for macOS</p>
+        </header>
+
+        <!-- Search Section -->
+        <section class="search-section">
+            <div class="search-box">
+                <input
+                    type="text"
+                    id="searchInput"
+                    placeholder="输入搜索关键词..."
+                    autocomplete="off"
+                >
+                <button id="searchBtn" class="search-btn">搜索</button>
+            </div>
+            <div class="search-options">
+                <label>
+                    <input type="checkbox" id="limitCheck"> 限制结果数量：
+                    <input type="number" id="limitInput" value="100" min="1" max="1000">
+                </label>
+            </div>
+        </section>
+
+        <!-- Status Bar -->
+        <section class="status-bar">
+            <span id="statusText">就绪</span>
+            <span id="statsText" class="stats"></span>
+        </section>
+
+        <!-- Results Section -->
+        <section class="results-section">
+            <div class="results-header">
+                <h2>搜索结果</h2>
+                <span id="resultCount">0 个结果</span>
+            </div>
+            <div id="resultsList" class="results-list">
+                <div class="empty-state">输入关键词开始搜索</div>
+            </div>
+        </section>
+
+        <!-- Index Section -->
+        <section class="index-section">
+            <details>
+                <summary>索引管理</summary>
+                <div class="index-content">
+                    <div class="path-inputs">
+                        <input type="text" id="indexPath" placeholder="输入要索引的路径，如 ~/Documents" value="/">
+                    </div>
+                    <button id="buildIndexBtn" class="build-btn">构建索引</button>
+                    <div id="buildStatus" class="build-status"></div>
+                </div>
+            </details>
+        </section>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

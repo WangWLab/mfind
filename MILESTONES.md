@@ -1,7 +1,7 @@
 # mfind 项目里程碑
 
 > **文档更新日期：** 2026-03-23
-> **当前状态：** 阶段 3 (服务化) 完成 - M11 后台服务和 M12 API 已完成
+> **当前状态：** 阶段 4 (GUI) 进行中 - M14 Tauri 框架已完成
 
 ---
 
@@ -37,6 +37,7 @@
 | M11: 后台服务 | W16 | W1 | 🟢 已完成 | 100% |
 | M12: HTTP/REST API | W16 | W1 | 🟢 已完成 | 100% |
 | M13: GUI 应用 | W24 | - | ⚪ 待开始 | 0% |
+| M14: Tauri 框架 | W17-18 | W1 | 🟢 已完成 | 100% |
 
 ---
 
@@ -261,13 +262,19 @@ move |res: notify::Result<notify::Event>| {
 
 ---
 
-### 阶段 4: GUI 开发 (6-8 周) ⚪
+### 阶段 4: GUI 开发 (6-8 周) 🟡
 
-#### M14: Tauri 框架 ⚪
+#### M14: Tauri 框架 🟢
 - **预计：** W17-18
+- **实际：** W1
+- **状态：** 🟢 已完成 (100%)
 - **交付物：**
-  - [ ] Tauri 项目结构
-  - [ ] Rust-前端桥接
+  - [x] Tauri 项目结构 (`crates/mfind-gui/`)
+  - [x] Tauri v2 配置 (`tauri.conf.json`)
+  - [x] Rust 后端 Commands (`commands.rs`)
+  - [x] 前端 HTML/CSS/JS (`index.html`, `styles.css`, `app.js`)
+  - [x] Tauri commands: `search`, `get_stats`, `build_index`
+  - [x] 单元测试 (4 个测试通过)
 
 #### M15: 搜索界面 ⚪
 - **预计：** W19-20

@@ -1,0 +1,35 @@
+[package]
+name = "mfind-gui"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+# Workspace
+mfind-core = { path = "../mfind-core" }
+
+# Core
+tokio = { workspace = true, features = ["full"] }
+anyhow = { workspace = true }
+serde = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true }
+
+# Tauri
+tauri = "2"
+tauri-plugin-shell = "2"
+
+# Logging
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true, features = ["env-filter"] }
+
+# Testing
+[dev-dependencies]
+tokio-test = { workspace = true }
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }

@@ -5,6 +5,7 @@ members = [
     "crates/mfind-cli",
     "crates/mfind-tui",
     "crates/mfind-api",
+    "crates/mfind-gui",
 ]
 exclude = [
     "scripts/gen-test-data",
