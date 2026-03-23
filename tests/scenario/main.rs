@@ -27,6 +27,12 @@ async fn main() {
     // 场景 3: 长时间未启动
     test_long_time_no_start().await;
 
+    // 场景 4: 后台持续运行
+    #[cfg(target_os = "macos")]
+    test_background_monitoring().await;
+    #[cfg(not(target_os = "macos"))]
+    println!("--- 场景 4: 后台持续运行 (仅支持 macOS) ---\n");
+
     println!("\n=== 所有场景测试完成 ===");
 }
 
@@ -147,5 +153,77 @@ async fn test_long_time_no_start() {
 
     // 验证正确检测到变化 (允许 ±1 误差，因为 tempdir 可能包含其他文件)
     assert!(stats2.total_files >= 550, "应至少 550 文件，实际 {}", stats2.total_files);
+    println!("  ✓ 通过\n");
+}
+
+/// 场景 4: 后台持续运行 - 验证 FSEvents 实时监控
+#[cfg(target_os = "macos")]
+async fn test_background_monitoring() {
+    use std::time::Duration;
+    use mfind_core::fs::{NativeFSEventsWatcher, FileSystemMonitor, MonitorConfig};
+
+    println!("--- 场景 4: 后台持续运行 (FSEvents) ---");
+
+    let dir = tempdir().unwrap();
+    let test_path = dir.path().join("test_data");
+    fs::create_dir_all(&test_path).unwrap();
+
+    // 创建监控器
+    let config = MonitorConfig::default();
+    let mut watcher = NativeFSEventsWatcher::new(config).unwrap();
+
+    // 启动监控
+    watcher.start(&[test_path.clone()]).await.unwrap();
+    println!("  FSEvents 监控已启动");
+
+    // 等待监控器初始化
+    tokio::time::sleep(Duration::from_millis(100)).await;
+
+    // 创建文件
+    let file_path = test_path.join("new_file.txt");
+    fs::write(&file_path, "test content").unwrap();
+
+    // 接收事件
+    let receiver = watcher.event_stream();
+    let mut events_received = 0;
+    let mut found_create = false;
+    let mut event_delay = Duration::from_millis(0);
+
+    // 等待事件 (最多 500ms)
+    let timeout = Duration::from_millis(500);
+    let start = Instant::now();
+    loop {
+        tokio::select! {
+            Ok(event) = receiver.recv_async() => {
+                events_received += 1;
+                event_delay = start.elapsed();
+                println!("  收到事件：{:?} - {:?}", event.event_type, event.path.file_name());
+
+                // 检查是否是目标文件 (使用 file_name 比较，因为路径可能不同)
+                if event.path.file_name() == file_path.file_name() {
+                    found_create = true;
+                }
+                // 收到相关事件后跳出
+                if found_create {
+                    break;
+                }
+            }
+            _ = tokio::time::sleep(timeout) => {
+                break;
+            }
+        }
+    }
+
+    // 停止监控
+    watcher.stop().await.unwrap();
+
+    println!("  事件接收：{} 个事件", events_received);
+    println!("  事件延迟：{:?}", event_delay);
+    println!("  创建检测：{}", if found_create { "✓" } else { "✗" });
+
+    // 验证：应在 100ms 内收到事件
+    assert!(event_delay < Duration::from_millis(100), "事件延迟应小于 100ms, 实际 {:?}", event_delay);
+    assert!(found_create, "应检测到文件创建事件");
+
     println!("  ✓ 通过\n");
 }
