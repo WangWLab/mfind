@@ -69,6 +69,32 @@ function setupEventListeners() {
     closePreviewBtn.addEventListener('click', () => {
         previewPanel.style.display = 'none';
     });
+
+    // Escape key to hide window (Spotlight-style)
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            // Hide preview panel if visible
+            if (previewPanel.style.display !== 'none') {
+                previewPanel.style.display = 'none';
+            } else {
+                // Hide the main window
+                window.__TAURI__?.window?.getCurrent()?.hide();
+            }
+        }
+    });
+
+    // Cmd/Ctrl+K to focus search input
+    document.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+            e.preventDefault();
+            searchInput.focus();
+        }
+    });
+
+    // Listen for window show/hide events
+    window.addEventListener('tauri://focus', () => {
+        searchInput.focus();
+    });
 }
 
 // Search function

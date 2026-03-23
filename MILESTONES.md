@@ -291,12 +291,18 @@ move |res: notify::Result<notify::Event>| {
   - [x] Tauri commands: `get_file_preview`, `open_in_finder`
   - [x] 单元测试 (10 个测试通过)
 
-#### M16: 系统集成 ⚪
+#### M16: 系统集成 🟢
 - **预计：** W21-22
+- **实际：** W1
+- **状态：** 🟢 已完成 (100%)
 - **交付物：**
-  - [ ] 菜单栏图标
-  - [ ] 全局快捷键
-  - [ ] Spotlight 式启动
+  - [x] 菜单栏图标（系统托盘）
+  - [x] 右键菜单（显示/隐藏窗口、退出）
+  - [x] 单实例运行（防止多实例启动）
+  - [x] Spotlight 式启动（Esc 键隐藏窗口）
+  - [x] Cmd+K 快捷键聚焦搜索框
+  - [x] Tauri 插件集成（tauri-plugin-single-instance）
+  - [x] 窗口控制命令（toggle_window, hide_window, show_window）
 
 #### M17: GUI 发布 ⚪
 - **预计：** W24
@@ -325,7 +331,16 @@ move |res: notify::Result<notify::Event>| {
 
 #### 新增功能
 
-1. **M15: 搜索界面增强** ✅
+1. **M16: 系统集成** ✅
+   - 菜单栏图标（系统托盘）
+   - 右键菜单（显示/隐藏窗口、退出）
+   - 单实例运行（防止多实例启动）
+   - Spotlight 式启动（Esc 键隐藏窗口）
+   - Cmd+K 快捷键聚焦搜索框
+   - 窗口控制命令（toggle_window, hide_window, show_window）
+   - Tauri 插件集成（tauri-plugin-single-instance）
+
+2. **M15: 搜索界面增强** ✅
    - 增强搜索框（高级搜索选项：正则、通配符、区分大小写）
    - 搜索历史记录（localStorage 存储，最多 20 条）
    - 文件预览功能（支持文本和图片格式）
@@ -334,7 +349,7 @@ move |res: notify::Result<notify::Event>| {
    - 辅助函数：`is_text_file`, `is_image_file`, `get_mime_type`, `base64_encode`
    - 10 个单元测试全部通过
 
-2. **M14: Tauri 框架** ✅
+3. **M14: Tauri 框架** ✅
    - Tauri v2 项目结构
    - 基础搜索界面
    - 索引管理和统计显示
@@ -369,9 +384,15 @@ move |res: notify::Result<notify::Event>| {
 - **单元测试**: 28 个测试全部通过
   - mfind-core: 18 个测试
   - mfind-api: 3 个测试
-  - mfind-gui: 10 个测试（M15 新增 6 个）
+  - mfind-gui: 10 个测试（M15 新增 6 个，M16 代码无需额外单元测试）
 - **集成测试**: 10 个测试（6 个需要 test_data）
 - **基准测试**: 7 个性能基准
+
+**构建验证:**
+- ✅ `cargo build -p mfind-gui` 编译通过
+- ✅ `cargo test -p mfind-gui` 10 个测试通过
+- ✅ 系统托盘配置正确
+- ✅ 单实例插件集成完成
 
 ### 已有功能 (之前完成)
 
@@ -488,12 +509,12 @@ mfind search '*.rs' -o list   # 列表输出 (默认)
 
 1. [x] **M14: Tauri 框架** - Tauri v2 框架搭建
 2. [x] **M15: 搜索界面** - 增强搜索功能、历史记录、文件预览
+3. [x] **M16: 系统集成** - 菜单栏图标、单实例运行、Spotlight 式启动
 
 ---
 
 ### 长期规划
 
-- [ ] M16: 系统集成（菜单栏图标、全局快捷键）
 - [ ] M17: GUI 发布（macOS 应用 Bundle、代码签名）
 - [ ] gRPC API
 - [ ] Linux/Windows 跨平台支持
@@ -527,6 +548,8 @@ mfind search '*.rs' -o list   # 列表输出 (默认)
 已完成里程碑:
 - ✅ M14: Tauri 框架
 - ✅ M15: 搜索界面增强
+- ✅ M16: 系统集成
 
 下一步行动:
-1. **阶段 3: 服务化** - 继续实现 gRPC/API 层，预计 2 周
+1. **阶段 5: 跨平台** - Linux/Windows支持
+2. **M17: GUI 发布** - macOS 应用 Bundle、代码签名

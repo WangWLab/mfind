@@ -20,8 +20,10 @@ serde = { workspace = true, features = ["derive"] }
 serde_json = { workspace = true }
 
 # Tauri
-tauri = "2"
+tauri = { version = "2", features = ["tray-icon", "image-ico", "image-png"] }
 tauri-plugin-shell = "2"
+tauri-plugin-global-shortcut = "2"
+tauri-plugin-single-instance = "2"
 
 # Logging
 tracing = { workspace = true }

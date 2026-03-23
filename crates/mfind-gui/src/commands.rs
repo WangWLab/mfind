@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::RwLock;
-use tauri::State;
+use tauri::{State, Manager};
 
 /// Shared state for the GUI application
 pub struct GuiState {
@@ -204,6 +204,46 @@ pub async fn open_in_finder(path: String) -> Result<(), String> {
 #[tauri::command]
 pub async fn open_in_finder(path: String) -> Result<(), String> {
     Err("仅在 macOS 上支持此功能".to_string())
+}
+
+/// Toggle window visibility
+#[tauri::command]
+pub fn toggle_window(app: tauri::AppHandle) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window("main") {
+        if let Ok(visible) = window.is_visible() {
+            if visible {
+                window.hide().map_err(|e| e.to_string())?;
+            } else {
+                window.show().map_err(|e| e.to_string())?;
+                window.set_focus().map_err(|e| e.to_string())?;
+            }
+            return Ok(());
+        }
+    }
+    Err("无法找到主窗口".to_string())
+}
+
+/// Hide the main window
+#[tauri::command]
+pub fn hide_window(app: tauri::AppHandle) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window("main") {
+        window.hide().map_err(|e| e.to_string())?;
+        Ok(())
+    } else {
+        Err("无法找到主窗口".to_string())
+    }
+}
+
+/// Show and focus the main window
+#[tauri::command]
+pub fn show_window(app: tauri::AppHandle) -> Result<(), String> {
+    if let Some(window) = app.get_webview_window("main") {
+        window.show().map_err(|e| e.to_string())?;
+        window.set_focus().map_err(|e| e.to_string())?;
+        Ok(())
+    } else {
+        Err("无法找到主窗口".to_string())
+    }
 }
 
 // Helper functions

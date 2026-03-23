@@ -105,7 +105,7 @@ async fn test_file_preview_response_image() {
 
 #[test]
 fn test_is_text_file() {
-    use mfind_gui::commands::{is_text_file, is_image_file};
+    use mfind_gui::commands::is_text_file;
 
     // Text files
     assert!(is_text_file("rs"));
@@ -122,7 +122,7 @@ fn test_is_text_file() {
 
 #[test]
 fn test_is_image_file() {
-    use mfind_gui::commands::{is_text_file, is_image_file};
+    use mfind_gui::commands::is_image_file;
 
     // Image files
     assert!(is_image_file("png"));
