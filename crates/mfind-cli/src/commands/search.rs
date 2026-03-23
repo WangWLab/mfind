@@ -107,6 +107,10 @@ pub struct SearchCommand {
     /// Show color in output
     #[arg(long, default_value = "auto")]
     pub color: String,
+
+    /// Watch for file changes after initial search (macOS only)
+    #[arg(long)]
+    pub watch: bool,
 }
 
 impl SearchCommand {
@@ -272,6 +276,63 @@ impl SearchCommand {
             style(total_matches).cyan(),
             elapsed
         );
+
+        // Watch mode - monitor for file changes
+        #[cfg(target_os = "macos")]
+        if self.watch {
+            use mfind_core::fs::{NativeFSEventsWatcher, FileSystemMonitor, MonitorConfig};
+            use mfind_core::event::FSEventType;
+
+            eprintln!(
+                "{} Starting filesystem monitor (watch mode)...",
+                style("→").blue()
+            );
+            eprintln!("{} Press Ctrl+C to stop", style("ℹ").yellow());
+
+            // Start FSEvents monitoring
+            let mut watcher = NativeFSEventsWatcher::new(MonitorConfig::default())?;
+            watcher.start(&search_paths).await?;
+
+            let receiver = watcher.event_stream();
+
+            // Wait for events
+            loop {
+                tokio::select! {
+                    Ok(event) = receiver.recv_async() => {
+                        let event_type_str = match &event.event_type {
+                            FSEventType::Create => "Create",
+                            FSEventType::Delete => "Delete",
+                            FSEventType::Modify => "Modify",
+                            FSEventType::Rename { .. } => "Rename",
+                            FSEventType::Metadata => "Metadata",
+                        };
+
+                        eprintln!(
+                            "{} [{}] {}",
+                            style("●").cyan(),
+                            style(event_type_str).yellow(),
+                            style(event.path.display()).dim()
+                        );
+                    }
+                    _ = tokio::signal::ctrl_c() => {
+                        eprintln!(
+                            "\n{} Stopping filesystem monitor...",
+                            style("→").blue()
+                        );
+                        watcher.stop().await?;
+                        break;
+                    }
+                }
+            }
+        }
+
+        #[cfg(not(target_os = "macos"))]
+        if self.watch {
+            eprintln!(
+                "{} Watch mode is only supported on macOS",
+                style("⚠").yellow()
+            );
+        }
 
         Ok(())
     }

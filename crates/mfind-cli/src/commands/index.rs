@@ -5,6 +5,24 @@ use console::style;
 use mfind_core::{IndexEngine, IndexConfig};
 use mfind_core::index::engine::IndexEngineTrait;
 use std::path::PathBuf;
+use std::fs;
+
+/// Format bytes to human readable string
+fn format_bytes(bytes: usize) -> String {
+    const KB: usize = 1024;
+    const MB: usize = 1024 * KB;
+    const GB: usize = 1024 * MB;
+
+    if bytes >= GB {
+        format!("{:.2} GB", bytes as f64 / GB as f64)
+    } else if bytes >= MB {
+        format!("{:.2} MB", bytes as f64 / MB as f64)
+    } else if bytes >= KB {
+        format!("{:.2} KB", bytes as f64 / KB as f64)
+    } else {
+        format!("{} B", bytes)
+    }
+}
 
 /// Index management commands
 #[derive(Subcommand)]
@@ -163,11 +181,62 @@ pub struct IndexExportCommand {
     /// Output file path
     #[arg(short = 'o', long)]
     pub output: Option<String>,
+
+    /// Paths to index (required for building new index before export)
+    #[arg(required = true)]
+    pub paths: Vec<String>,
 }
 
 impl IndexExportCommand {
     pub async fn run(&self) -> anyhow::Result<()> {
-        println!("{}", style("Index export is under development").yellow());
+        // Parse paths
+        let roots: Vec<PathBuf> = self.paths.iter().map(PathBuf::from).collect();
+
+        // Build index configuration
+        let index_config = IndexConfig::default();
+
+        // Create index engine
+        let mut engine = IndexEngine::new(index_config)?;
+
+        eprintln!(
+            "{} Building index for export:",
+            style("→").blue()
+        );
+
+        for path in &roots {
+            eprintln!("    {}", style(path.display()).green());
+        }
+
+        // Build the index
+        let start = std::time::Instant::now();
+        let stats = engine.build(&roots).await?;
+        let build_elapsed = start.elapsed();
+
+        eprintln!(
+            "{} Indexed {} files in {:?}",
+            style("✓").green(),
+            style(stats.total_files).cyan(),
+            build_elapsed
+        );
+
+        // Export to bytes
+        let export_data = engine.export().await?;
+        eprintln!(
+            "{} Exported index size: {}",
+            style("→").blue(),
+            style(format_bytes(export_data.len())).cyan()
+        );
+
+        // Write to file
+        let output_path = self.output.as_deref().unwrap_or("mfind_index.dat");
+        fs::write(output_path, &export_data)?;
+
+        eprintln!(
+            "{} Index exported to: {}",
+            style("✓").green(),
+            style(output_path).green()
+        );
+
         Ok(())
     }
 }
@@ -182,12 +251,64 @@ pub struct IndexImportCommand {
 
 impl IndexImportCommand {
     pub async fn run(&self) -> anyhow::Result<()> {
-        println!(
+        eprintln!(
             "{} Importing index from: {}",
             style("→").blue(),
             style(&self.input).green()
         );
-        println!("{}", style("Index import is under development").yellow());
+
+        // Read index data
+        let data = fs::read(&self.input)?;
+        eprintln!(
+            "{} Read {} bytes",
+            style("→").blue(),
+            style(format_bytes(data.len())).cyan()
+        );
+
+        // Create index engine
+        let index_config = IndexConfig::default();
+        let mut engine = IndexEngine::new(index_config)?;
+
+        // Import index
+        let start = std::time::Instant::now();
+        engine.import(&data).await?;
+        let import_elapsed = start.elapsed();
+
+        eprintln!(
+            "{} Index imported in {:?}",
+            style("✓").green(),
+            import_elapsed
+        );
+
+        // Show stats
+        let stats = engine.stats();
+        eprintln!(
+            "{} Total files: {}",
+            style("ℹ").blue(),
+            style(stats.total_files).cyan()
+        );
+        eprintln!(
+            "{} Health: {:?}",
+            style("ℹ").blue(),
+            stats.health
+        );
+
+        // Test search
+        eprintln!();
+        eprintln!(
+            "{} Testing search...",
+            style("→").blue()
+        );
+
+        use mfind_core::query::QueryParser;
+        let query = QueryParser::parse("*")?;
+        let results = engine.search(&query)?;
+        eprintln!(
+            "{} Search returned {} results",
+            style("✓").green(),
+            style(results.total).cyan()
+        );
+
         Ok(())
     }
 }
