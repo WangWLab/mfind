@@ -20,7 +20,21 @@
       "Bash(./target/release/gen-test-data --count 1000 --concurrency 200)",
       "Bash(./target/release/gen-test-data --count 100 --concurrency 50)",
       "Bash(./target/release/gen-test-data --count 10000 --concurrency 500)",
-      "Bash(git reset:*)"
+      "Bash(git reset:*)",
+      "Bash(./scripts/bench.sh --help)",
+      "Bash(make help:*)",
+      "Bash(./scripts/gen-test-data.sh --count 500)",
+      "Bash(./target/release/gen-test-data --count 500 --for_integration)",
+      "Bash(rm -rf ../../test_data)",
+      "Bash(./target/release/gen-test-data --output ../../test_data --count 500 --for_integration)",
+      "Bash(./target/release/gen-test-data --output ../../test_data --count 500 --for-integration)",
+      "Bash(./target/release/mfind search:*)",
+      "Bash(echo $CARGO_BIN_EXE_mfind)",
+      "Bash(git checkout:*)",
+      "Bash(grep -r FSEvent ~/.cargo/registry/src/*/core-foundation-sys-*/src/)",
+      "Bash(grep -A 20 'pub struct FsEvent' ~/.cargo/registry/src/*/fsevent-*/src/lib.rs)",
+      "Bash(cat ~/.cargo/registry/src/*/fsevent-*/src/lib.rs)",
+      "Bash(cargo remove:*)"
     ]
   }
 }
