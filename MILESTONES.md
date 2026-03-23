@@ -336,7 +336,14 @@ move |res: notify::Result<notify::Event>| {
 
 #### 新增功能
 
-1. **M16: 系统集成** ✅
+1. **M17: GUI 发布** ✅
+   - macOS 应用 Bundle 配置 (app, dmg 格式)
+   - 代码签名脚本 (scripts/sign-macos.sh)
+   - 构建发布脚本 (scripts/build-release.sh)
+   - GitHub Actions 发布工作流
+   - DMG 安装包配置
+
+2. **M16: 系统集成** ✅
    - 菜单栏图标（系统托盘）
    - 右键菜单（显示/隐藏窗口、退出）
    - 单实例运行（防止多实例启动）
