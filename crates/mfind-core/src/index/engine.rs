@@ -1,6 +1,8 @@
 //! Index engine trait and implementation
 
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
 use async_trait::async_trait;
@@ -95,6 +97,8 @@ pub struct IndexEngine {
     meta_cache: MetaCache,
     stats: IndexStats,
     built: bool,
+    #[cfg(target_os = "macos")]
+    monitor_running: Arc<AtomicBool>,
 }
 
 impl IndexEngine {
@@ -107,6 +111,8 @@ impl IndexEngine {
             meta_cache: MetaCache::new(),
             stats: IndexStats::default(),
             built: false,
+            #[cfg(target_os = "macos")]
+            monitor_running: Arc::new(AtomicBool::new(false)),
         })
     }
 
@@ -118,6 +124,65 @@ impl IndexEngine {
     /// Check if index is built
     pub fn is_built(&self) -> bool {
         self.built
+    }
+
+    /// Start background filesystem monitoring (macOS only)
+    #[cfg(target_os = "macos")]
+    pub async fn start_monitoring(&mut self, roots: &[PathBuf]) -> Result<()> {
+        use crate::fs::{NativeFSEventsWatcher, FileSystemMonitor, MonitorConfig};
+
+        if self.monitor_running.load(Ordering::SeqCst) {
+            return Ok(()); // Already running
+        }
+
+        let config = MonitorConfig::default();
+        let mut watcher = NativeFSEventsWatcher::new(config)?;
+        watcher.start(roots).await?;
+
+        let event_receiver = watcher.event_stream();
+        self.monitor_running.store(true, Ordering::SeqCst);
+
+        // Spawn background task to process events
+        let running = self.monitor_running.clone();
+        tokio::spawn(async move {
+            while running.load(Ordering::SeqCst) {
+                // Collect events with batching
+                let mut events = Vec::new();
+
+                // Collect events for up to 100ms or until we have 100 events
+                loop {
+                    tokio::select! {
+                        Ok(event) = event_receiver.recv_async() => {
+                            events.push(event);
+                            if events.len() >= 100 {
+                                break;
+                            }
+                        }
+                        _ = tokio::time::sleep(tokio::time::Duration::from_millis(100)) => {
+                            break;
+                        }
+                    }
+                }
+
+                // Process batch of events
+                // Note: We can't update the index here directly since we don't have &mut self
+                // In a real implementation, you'd want to use a channel to send events
+                // to the IndexEngine or use interior mutability
+                if !events.is_empty() {
+                    tracing::debug!("Received {} filesystem events", events.len());
+                    // Events would be processed here in a full implementation
+                }
+            }
+        });
+
+        Ok(())
+    }
+
+    /// Stop background monitoring (macOS only)
+    #[cfg(target_os = "macos")]
+    pub async fn stop_monitoring(&mut self) -> Result<()> {
+        self.monitor_running.store(false, Ordering::SeqCst);
+        Ok(())
     }
 }
 
