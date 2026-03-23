@@ -9,7 +9,18 @@
       "Bash(cargo run:*)",
       "Bash(cargo build:*)",
       "Bash(git add:*)",
-      "Bash(git remote:*)"
+      "Bash(git remote:*)",
+      "Bash(cargo doc:*)",
+      "WebFetch(domain:docs.rs)",
+      "Bash(chmod:*)",
+      "Bash(./scripts/generate_1m_files.sh ./test_data/large_scale 1000000)",
+      "Bash(cargo bench:*)",
+      "Bash(./scripts/gen_test_data.rs --count 1000 --concurrency 200)",
+      "Bash(/Users/wangwei/Workspace/AI/mfind/scripts/gen-test-data/target/release/gen-test-data --count 1000 --concurrency 200)",
+      "Bash(./target/release/gen-test-data --count 1000 --concurrency 200)",
+      "Bash(./target/release/gen-test-data --count 100 --concurrency 50)",
+      "Bash(./target/release/gen-test-data --count 10000 --concurrency 500)",
+      "Bash(git reset:*)"
     ]
   }
 }

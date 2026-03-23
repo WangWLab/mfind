@@ -5,6 +5,9 @@ members = [
     "crates/mfind-cli",
     "crates/mfind-tui",
 ]
+exclude = [
+    "scripts/gen-test-data",
+]
 
 [workspace.package]
 version = "0.1.0"

@@ -70,3 +70,8 @@ criterion.workspace = true
 name = "search_bench"
 path = "../../tests/benchmarks/search_bench.rs"
 harness = false
+
+[[bench]]
+name = "large_scale_bench"
+path = "../../tests/benchmarks/large_scale_bench.rs"
+harness = false
