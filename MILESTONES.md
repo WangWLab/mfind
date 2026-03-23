@@ -262,7 +262,9 @@ move |res: notify::Result<notify::Event>| {
 
 ---
 
-### 阶段 4: GUI 开发 (6-8 周) 🟡
+### 阶段 4: GUI 开发 (6-8 周) 🟢
+
+**状态：** 🟢 已完成 (100%)
 
 #### M14: Tauri 框架 🟢
 - **预计：** W17-18
@@ -276,12 +278,18 @@ move |res: notify::Result<notify::Event>| {
   - [x] Tauri commands: `search`, `get_stats`, `build_index`
   - [x] 单元测试 (4 个测试通过)
 
-#### M15: 搜索界面 ⚪
+#### M15: 搜索界面 🟢
 - **预计：** W19-20
+- **实际：** W1
+- **状态：** 🟢 已完成 (100%)
 - **交付物：**
-  - [ ] 搜索框
-  - [ ] 结果列表
-  - [ ] 实时预览
+  - [x] 增强搜索框（高级搜索选项：正则、通配符、区分大小写）
+  - [x] 搜索历史记录（localStorage 存储，最多 20 条）
+  - [x] 结果列表增强（点击预览）
+  - [x] 文件预览功能（文本和图片）
+  - [x] 预览面板（可关闭）
+  - [x] Tauri commands: `get_file_preview`, `open_in_finder`
+  - [x] 单元测试 (10 个测试通过)
 
 #### M16: 系统集成 ⚪
 - **预计：** W21-22
@@ -317,30 +325,29 @@ move |res: notify::Result<notify::Event>| {
 
 #### 新增功能
 
-1. **原生 FSEvents 监控 (M6/M6b)** ✅
-   - 实现 macOS 原生 FSEvents watcher (`native_fsevents.rs`)
-   - 使用 notify crate 封装 (底层调用 macOS FSEvents API)
-   - 事件驱动，零轮询开销
-   - 支持递归目录监控
-   - 事件批处理和去重机制
-   - 集成到 IndexEngine 的 `start_monitoring()` 方法
+1. **M15: 搜索界面增强** ✅
+   - 增强搜索框（高级搜索选项：正则、通配符、区分大小写）
+   - 搜索历史记录（localStorage 存储，最多 20 条）
+   - 文件预览功能（支持文本和图片格式）
+   - 预览面板（可关闭，显示文件元数据）
+   - Tauri commands: `get_file_preview`, `open_in_finder`
+   - 辅助函数：`is_text_file`, `is_image_file`, `get_mime_type`, `base64_encode`
+   - 10 个单元测试全部通过
 
-2. **FSEvents 监控 (M6)** ✅
-   - 基于轮询的实时监控 (`fsevents.rs`)
-   - 可作为 fallback 方案
-   - 事件批处理和去重机制
-   - 支持目录递归监控
+2. **M14: Tauri 框架** ✅
+   - Tauri v2 项目结构
+   - 基础搜索界面
+   - 索引管理和统计显示
+   - 4 个单元测试通过
 
-3. **索引增量更新 (M7)** ✅
-   - `IndexEngine::update()` 完整实现
-   - 支持 Create/Delete/Modify/Rename 事件处理
-   - inode 映射和元数据缓存同步
-   - FST 索引动态重建
+3. **M12: HTTP/REST API** ✅
+   - axum HTTP 服务器
+   - `/health`, `/stats`, `/search` 端点
+   - 3 个集成测试通过
 
-4. **场景 4: 后台持续运行测试** ✅
-   - FSEvents 实时监控验证
-   - 事件延迟测试 (<100ms 目标)
-   - 实际结果：12.27ms
+4. **M11: 后台服务** ✅
+   - launchd 集成
+   - `mfind service install/start/stop/uninstall/status/logs` 命令
 
 #### 测试结果
 
@@ -359,7 +366,10 @@ move |res: notify::Result<notify::Event>| {
 
 #### 测试覆盖
 
-- **单元测试**: 18 个测试全部通过
+- **单元测试**: 28 个测试全部通过
+  - mfind-core: 18 个测试
+  - mfind-api: 3 个测试
+  - mfind-gui: 10 个测试（M15 新增 6 个）
 - **集成测试**: 10 个测试（6 个需要 test_data）
 - **基准测试**: 7 个性能基准
 
@@ -472,10 +482,20 @@ mfind search '*.rs' -o list   # 列表输出 (默认)
 
 ---
 
+### 阶段 4 完成度：100% ✅
+
+**阶段 4: GUI 开发** - 已完成
+
+1. [x] **M14: Tauri 框架** - Tauri v2 框架搭建
+2. [x] **M15: 搜索界面** - 增强搜索功能、历史记录、文件预览
+
+---
+
 ### 长期规划
 
+- [ ] M16: 系统集成（菜单栏图标、全局快捷键）
+- [ ] M17: GUI 发布（macOS 应用 Bundle、代码签名）
 - [ ] gRPC API
-- [ ] Tauri GUI 应用
 - [ ] Linux/Windows 跨平台支持
 
 ---
@@ -495,6 +515,18 @@ mfind search '*.rs' -o list   # 列表输出 (默认)
 - ✅ M10: 测试基础设施
 - ✅ M10b: 场景测试 (4 场景全部通过)
 - ✅ M11: 后台服务 launchd 集成
+
+**阶段 3 (服务化) 完成度：100%** ✅
+
+已完成里程碑:
+- ✅ M11: 后台服务
+- ✅ M12: HTTP/REST API
+
+**阶段 4 (GUI) 完成度：100%** ✅
+
+已完成里程碑:
+- ✅ M14: Tauri 框架
+- ✅ M15: 搜索界面增强
 
 下一步行动:
 1. **阶段 3: 服务化** - 继续实现 gRPC/API 层，预计 2 周
