@@ -2,11 +2,36 @@
 
 use clap::Args;
 use console::style;
+use std::path::PathBuf;
+use std::fs;
 
 use crate::output::{OutputFormat, OutputWriter};
 use mfind_core::{IndexEngine, IndexConfig, QueryParser};
 use mfind_core::index::engine::IndexEngineTrait;
-use std::path::PathBuf;
+
+/// Get cache directory path
+fn get_cache_dir() -> anyhow::Result<PathBuf> {
+    let cache_dir = if cfg!(target_os = "macos") {
+        dirs::cache_dir().unwrap_or_else(|| PathBuf::from("."))
+    } else {
+        dirs::cache_dir().unwrap_or_else(|| PathBuf::from("."))
+    };
+    let mfind_cache = cache_dir.join("mfind");
+    fs::create_dir_all(&mfind_cache)?;
+    Ok(mfind_cache)
+}
+
+/// Generate cache key from search paths
+fn generate_cache_key(paths: &[PathBuf]) -> String {
+    use std::collections::hash_map::DefaultHasher;
+    use std::hash::{Hash, Hasher};
+
+    let mut hasher = DefaultHasher::new();
+    for path in paths {
+        path.hash(&mut hasher);
+    }
+    format!("index_{:016x}.bin", hasher.finish())
+}
 
 /// Search for files
 #[derive(Args, Default)]
@@ -121,24 +146,72 @@ impl SearchCommand {
         // Create index engine
         let mut engine = IndexEngine::new(index_config)?;
 
-        // Build or load index
-        eprintln!(
-            "{} Building index for: {}",
-            style("→").blue(),
-            style(search_paths.iter()
-                .map(|p| p.display().to_string())
-                .collect::<Vec<_>>()
-                .join(", ")
-            ).green()
-        );
+        // Try to load cached index
+        let cache_dir = get_cache_dir()?;
+        let cache_key = generate_cache_key(&search_paths);
+        let cache_path = cache_dir.join(&cache_key);
 
-        let stats = engine.build(&search_paths).await?;
-        eprintln!(
-            "{} Indexed {} files in {:?}",
-            style("✓").green(),
-            style(stats.total_files).cyan(),
-            stats.build_time
-        );
+        if cache_path.exists() {
+            // Load from cache
+            let start = std::time::Instant::now();
+            match fs::read(&cache_path) {
+                Ok(data) => {
+                    if let Ok(_) = engine.import(&data).await {
+                        let elapsed = start.elapsed();
+                        eprintln!(
+                            "{} Loaded {} files from cache in {:?}",
+                            style("✓").green(),
+                            style(engine.stats().total_files).cyan(),
+                            elapsed
+                        );
+
+                        // Rebuild to get updated stats
+                        engine.build(&search_paths).await?
+                    } else {
+                        // Cache corrupted, rebuild
+                        eprintln!(
+                            "{} Building index for: {}",
+                            style("→").blue(),
+                            style(search_paths.iter()
+                                .map(|p| p.display().to_string())
+                                .collect::<Vec<_>>()
+                                .join(", ")
+                            ).green()
+                        );
+                        engine.build(&search_paths).await?
+                    }
+                }
+                Err(_) => {
+                    eprintln!(
+                        "{} Building index for: {}",
+                        style("→").blue(),
+                        style(search_paths.iter()
+                            .map(|p| p.display().to_string())
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                        ).green()
+                    );
+                    engine.build(&search_paths).await?
+                }
+            }
+        } else {
+            // Build new index
+            eprintln!(
+                "{} Building index for: {}",
+                style("→").blue(),
+                style(search_paths.iter()
+                    .map(|p| p.display().to_string())
+                    .collect::<Vec<_>>()
+                    .join(", ")
+                ).green()
+            );
+            engine.build(&search_paths).await?
+        };
+
+        // Save to cache
+        if let Ok(data) = engine.export().await {
+            let _ = fs::write(&cache_path, data);
+        }
 
         // Parse query
         let query_pattern = if self.regex {

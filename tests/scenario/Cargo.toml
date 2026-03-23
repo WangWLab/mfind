@@ -1,0 +1,17 @@
+[package]
+name = "scenario-tests"
+version = "0.1.0"
+edition = "2021"
+
+[workspace]
+
+[[bin]]
+name = "scenario-tests"
+path = "main.rs"
+
+[dependencies]
+mfind-core = { path = "../../crates/mfind-core" }
+tokio = { version = "1", features = ["full", "time"] }
+flume = "0.11"
+tempfile = "3"
+anyhow = "1"
