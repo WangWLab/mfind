@@ -27,7 +27,8 @@
 | M3: 查询引擎 | W3 | W1 | 🟢 已完成 | 100% |
 | M4: CLI 框架 | W4 | W1 | 🟢 已完成 | 100% |
 | M5: MVP 发布 | W6 | W1 | 🟢 已完成 | 100% |
-| M6: FSEvents 监控 | W7-8 | W1 | 🟢 已完成 | 100% |
+| M6: FSEvents 监控 (轮询) | W7-8 | W1 | 🟡 部分完成 | 70% |
+| M6b: 原生 FSEvents | W8 | - | ⚪ 待开始 | 0% |
 | M7: 增量更新 | W9 | W1 | 🟢 已完成 | 100% |
 | M8: 索引持久化 | W10 | W1 | 🟢 已完成 | 100% |
 | M9: TUI 界面 | W12 | - | ⚪ 待开始 | 0% |
@@ -103,15 +104,58 @@
 
 ### 阶段 2: 完善 CLI (4-6 周) 🟡
 
-#### M6: FSEvents 监控 🟢
+#### M6: FSEvents 监控 🟡
 - **预计：** W7-8
 - **实际：** W1
-- **状态：** 🟢 已完成 (100%)
+- **状态：** 🟡 部分完成 (轮询实现 70%)
 - **交付物：**
   - [x] FSEvents 封装 (`fsevents.rs`)
   - [x] 实时监控服务（基于轮询的实现）
   - [x] 事件批处理 (EventBatch)
   - [x] 事件去重 (EventDeduplicator)
+  - [ ] 原生 FSEvents API 实现 (使用 Core Foundation)
+
+#### M6b: 原生 FSEvents ⚪
+- **预计：** W8
+- **状态：** ⚪ 待开始
+- **交付物：**
+  - [ ] `core-foundation` 集成
+  - [ ] `FSEventStreamCreate` 封装
+  - [ ] `CFRunLoop` 事件循环集成
+  - [ ] 事件标志转换 (`FSEventFlags` → `FSEventType`)
+  - [ ] 递归目录监控
+  - [ ] 事件延迟 < 50ms
+
+**技术方案：**
+```rust
+// 使用 Core Foundation FSEvents API
+use core_foundation::file_system::{FSEventStreamCreate, FSEventStreamStart};
+
+pub struct NativeFSEventsWatcher {
+    stream_ref: FSEventStreamRef,
+    run_loop: CFRunLoop,
+    event_sender: flume::Sender<FSEvent>,
+}
+
+// 事件回调
+extern "C" fn fsevent_callback(
+    stream_ref: ConstFSEventStreamRef,
+    client_callback_info: *mut c_void,
+    num_events: usize,
+    event_paths: *mut c_void,
+    event_flags: *const FSEventStreamEventFlags,
+    event_ids: *const FSEventStreamEventId,
+) {
+    // 转换 FSEvents 标志为我们的 FSEventType
+    // 发送事件到 IndexEngine
+}
+```
+
+**验收标准：**
+- [ ] 事件延迟 < 50ms
+- [ ] CPU 空闲占用 < 1%
+- [ ] 支持递归监控
+- [ ] 正确区分 Create/Delete/Modify/Rename 事件
 
 #### M7: 增量更新 🟢
 - **预计：** W9
