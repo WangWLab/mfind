@@ -1,9 +1,10 @@
 //! Index statistics and health information
 
 use std::time::{Duration, SystemTime};
+use serde::{Serialize, Deserialize};
 
 /// Index statistics
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct IndexStats {
     /// Total number of files
     pub total_files: u64,
@@ -24,7 +25,7 @@ pub struct IndexStats {
 }
 
 /// Index health status
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub enum IndexHealth {
     /// Index is healthy and up-to-date
     #[default]

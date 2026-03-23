@@ -1,6 +1,6 @@
 //! Metadata cache for file information
 
-use std::time::SystemTime;
+use std::time::{Duration, SystemTime};
 
 use dashmap::DashMap;
 
@@ -65,6 +65,37 @@ impl MetaCache {
     /// Clear the cache
     pub fn clear(&self) {
         self.cache.clear();
+    }
+
+    /// Iterate over all entries
+    pub fn iter(&self) -> impl Iterator<Item = (u64, FileMetadata)> + '_ {
+        self.cache.iter().map(|r| (*r.key(), r.value().clone()))
+    }
+
+    /// Export to bytes
+    pub fn to_bytes(&self) -> crate::Result<Vec<u8>> {
+        use bincode::Options;
+        // Convert to serializable format (inode -> (size, secs, nanos, is_dir))
+        let entries: Vec<(u64, (u64, u64, u32, bool))> = self.iter()
+            .map(|(inode, meta)| {
+                let duration = meta.modified.duration_since(SystemTime::UNIX_EPOCH).unwrap_or(Duration::ZERO);
+                (inode, (meta.size, duration.as_secs(), duration.subsec_nanos(), meta.is_dir))
+            })
+            .collect();
+        let data = bincode::DefaultOptions::new().serialize(&entries)?;
+        Ok(data)
+    }
+
+    /// Import from bytes
+    pub fn from_bytes(data: &[u8]) -> crate::Result<Self> {
+        use bincode::Options;
+        let entries: Vec<(u64, (u64, u64, u32, bool))> = bincode::DefaultOptions::new().deserialize(data)?;
+        let cache = Self::new();
+        for (inode, (size, secs, nanos, is_dir)) in entries {
+            let modified = SystemTime::UNIX_EPOCH + Duration::new(secs, nanos);
+            cache.insert(inode, FileMetadata { size, modified, is_dir });
+        }
+        Ok(cache)
     }
 }
 

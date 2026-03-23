@@ -56,6 +56,27 @@ impl InodeMap {
     pub fn iter(&self) -> impl Iterator<Item = (u64, PathBuf)> + '_ {
         self.map.iter().map(|r| (*r.key(), r.value().clone()))
     }
+
+    /// Export to bytes (simple binary format: count + [inode + path_len + path]...)
+    pub fn to_bytes(&self) -> crate::Result<Vec<u8>> {
+        use bincode::Options;
+        let entries: Vec<(u64, String)> = self.iter()
+            .map(|(inode, path)| (inode, path.to_string_lossy().to_string()))
+            .collect();
+        let data = bincode::DefaultOptions::new().serialize(&entries)?;
+        Ok(data)
+    }
+
+    /// Import from bytes
+    pub fn from_bytes(data: &[u8]) -> crate::Result<Self> {
+        use bincode::Options;
+        let entries: Vec<(u64, String)> = bincode::DefaultOptions::new().deserialize(data)?;
+        let map = Self::new();
+        for (inode, path) in entries {
+            map.insert(inode, PathBuf::from(path));
+        }
+        Ok(map)
+    }
 }
 
 impl Default for InodeMap {

@@ -370,12 +370,75 @@ impl IndexEngineTrait for IndexEngine {
     }
 
     async fn export(&self) -> Result<Vec<u8>> {
-        // TODO: Implement export
-        Ok(vec![])
+        use bincode::Options;
+
+        // Export FST index
+        let fst_data = self.fst_index.to_bytes()?;
+
+        // Export inode map
+        let inode_data = self.inode_map.to_bytes()?;
+
+        // Export meta cache
+        let meta_data = self.meta_cache.to_bytes()?;
+
+        // Export stats
+        let stats_data = bincode::DefaultOptions::new().serialize(&self.stats)?;
+
+        // Combine all parts: [fst_len, fst_data, inode_len, inode_data, meta_len, meta_data, stats_len, stats_data]
+        let mut buffer = Vec::new();
+
+        // Write FST
+        buffer.extend_from_slice(&(fst_data.len() as u64).to_le_bytes());
+        buffer.extend_from_slice(&fst_data);
+
+        // Write inode map
+        buffer.extend_from_slice(&(inode_data.len() as u64).to_le_bytes());
+        buffer.extend_from_slice(&inode_data);
+
+        // Write meta cache
+        buffer.extend_from_slice(&(meta_data.len() as u64).to_le_bytes());
+        buffer.extend_from_slice(&meta_data);
+
+        // Write stats
+        buffer.extend_from_slice(&(stats_data.len() as u64).to_le_bytes());
+        buffer.extend_from_slice(&stats_data);
+
+        Ok(buffer)
     }
 
-    async fn import(&mut self, _data: &[u8]) -> Result<()> {
-        // TODO: Implement import
+    async fn import(&mut self, data: &[u8]) -> Result<()> {
+        use bincode::Options;
+
+        let mut offset = 0;
+
+        // Read FST
+        let fst_len = u64::from_le_bytes(data[offset..offset + 8].try_into()?) as usize;
+        offset += 8;
+        let fst_data = &data[offset..offset + fst_len];
+        self.fst_index = FSTIndex::from_bytes(fst_data)?;
+        offset += fst_len;
+
+        // Read inode map
+        let inode_len = u64::from_le_bytes(data[offset..offset + 8].try_into()?) as usize;
+        offset += 8;
+        let inode_data = &data[offset..offset + inode_len];
+        self.inode_map = InodeMap::from_bytes(inode_data)?;
+        offset += inode_len;
+
+        // Read meta cache
+        let meta_len = u64::from_le_bytes(data[offset..offset + 8].try_into()?) as usize;
+        offset += 8;
+        let meta_data = &data[offset..offset + meta_len];
+        self.meta_cache = MetaCache::from_bytes(meta_data)?;
+        offset += meta_len;
+
+        // Read stats
+        let stats_len = u64::from_le_bytes(data[offset..offset + 8].try_into()?) as usize;
+        offset += 8;
+        let stats_data = &data[offset..offset + stats_len];
+        self.stats = bincode::DefaultOptions::new().deserialize(stats_data)?;
+
+        self.built = true;
         Ok(())
     }
 
