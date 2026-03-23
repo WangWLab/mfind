@@ -841,19 +841,19 @@ mfind/
 - TUI 界面 ✅ 已完成
 - 性能对标 fd
 
-### 阶段 3: 服务化 (4 周) 🟡
+### 阶段 3: 服务化 (4 周) 🟢
 
 | 周次 | 任务 | 交付物 |
 |------|------|--------|
 | W1 | 后台服务架构 | ✅ serve 命令、守护进程 |
 | W2 | launchd 集成 | ✅ plist 配置、service 命令 |
-| W3 | RPC/API 设计 | ⚪ gRPC/proto 定义 |
+| W3 | HTTP/REST API | ✅ axum 服务器、/health /stats /search 端点 |
 | W4 | 配置系统 | ⚪ 配置文件、环境变量 |
 
 **交付物：**
 - ✅ 后台常驻服务
 - ✅ 开机自启动
-- ⚪ API 接口
+- ✅ HTTP/REST API
 
 ### 阶段 4: GUI 开发 (6-8 周)
 

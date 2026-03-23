@@ -1,7 +1,7 @@
 # mfind 项目里程碑
 
 > **文档更新日期：** 2026-03-23
-> **当前状态：** 阶段 2 (完善 CLI) - 即将完成，M10 场景测试已完成
+> **当前状态：** 阶段 3 (服务化) 完成 - M11 后台服务和 M12 API 已完成
 
 ---
 
@@ -35,7 +35,8 @@
 | M10: 测试基础设施 | W11 | W1 | 🟢 已完成 | 100% |
 | M10b: 场景测试 | W11 | W1 | 🟢 已完成 | 100% |
 | M11: 后台服务 | W16 | W1 | 🟢 已完成 | 100% |
-| M12: GUI 应用 | W24 | - | ⚪ 待开始 | 0% |
+| M12: HTTP/REST API | W16 | W1 | 🟢 已完成 | 100% |
+| M13: GUI 应用 | W24 | - | ⚪ 待开始 | 0% |
 
 ---
 
@@ -224,7 +225,9 @@ move |res: notify::Result<notify::Event>| {
 
 ---
 
-### 阶段 3: 服务化 (4 周) 🟡
+### 阶段 3: 服务化 (4 周) 🟢
+
+**状态：** 🟢 已完成 (100%)
 
 #### M11: 后台服务 🟢
 - **预计：** W14-15
@@ -238,8 +241,20 @@ move |res: notify::Result<notify::Event>| {
   - [x] 后台服务配置（LowPriorityIO, Nice=10, KeepAlive）
   - [x] 日志输出到 `/tmp/mfind.out.log` 和 `/tmp/mfind.err.log`
 
-#### M11: RPC/API ⚪
+#### M12: HTTP/REST API 🟢
 - **预计：** W16
+- **实际：** W1
+- **状态：** 🟢 已完成 (100%)
+- **交付物：**
+  - [x] `mfind-api` crate 创建
+  - [x] HTTP 服务器 (axum)
+  - [x] `/health` 健康检查端点
+  - [x] `/stats` 索引统计端点
+  - [x] `/search` 搜索端点 (GET/POST)
+  - [x] 集成测试 (3 个测试通过)
+
+#### M13: RPC/gRPC ⚪
+- **预计：** W17
 - **交付物：**
   - [ ] gRPC/proto 定义
   - [ ] 内部 API 接口
@@ -248,27 +263,27 @@ move |res: notify::Result<notify::Event>| {
 
 ### 阶段 4: GUI 开发 (6-8 周) ⚪
 
-#### M12: Tauri 框架 ⚪
+#### M14: Tauri 框架 ⚪
 - **预计：** W17-18
 - **交付物：**
   - [ ] Tauri 项目结构
   - [ ] Rust-前端桥接
 
-#### M13: 搜索界面 ⚪
+#### M15: 搜索界面 ⚪
 - **预计：** W19-20
 - **交付物：**
   - [ ] 搜索框
   - [ ] 结果列表
   - [ ] 实时预览
 
-#### M14: 系统集成 ⚪
+#### M16: 系统集成 ⚪
 - **预计：** W21-22
 - **交付物：**
   - [ ] 菜单栏图标
   - [ ] 全局快捷键
   - [ ] Spotlight 式启动
 
-#### M15: GUI 发布 ⚪
+#### M17: GUI 发布 ⚪
 - **预计：** W24
 - **交付物：**
   - [ ] macOS 应用 Bundle
@@ -279,11 +294,11 @@ move |res: notify::Result<notify::Event>| {
 
 ### 阶段 5: 跨平台 (持续) ⚪
 
-#### M16: Linux 支持 ⚪
+#### M18: Linux 支持 ⚪
 - [ ] inotify 监控
 - [ ] Debian/RPM 包
 
-#### M17: Windows 支持 ⚪
+#### M19: Windows 支持 ⚪
 - [ ] USN Journal 监控
 - [ ] MSI 安装包
 
