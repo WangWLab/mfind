@@ -4,11 +4,15 @@ version.workspace = true
 edition.workspace = true
 authors.workspace = true
 license.workspace = true
-description = "Terminal user interface for mfind file search tool"
+description = "Terminal user interface for mfind"
 
 [lib]
 name = "mfind_tui"
 path = "src/lib.rs"
+
+[[bin]]
+name = "mfind-tui"
+path = "src/main.rs"
 
 [dependencies]
 mfind-core = { path = "../mfind-core" }
