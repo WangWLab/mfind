@@ -304,12 +304,17 @@ move |res: notify::Result<notify::Event>| {
   - [x] Tauri 插件集成（tauri-plugin-single-instance）
   - [x] 窗口控制命令（toggle_window, hide_window, show_window）
 
-#### M17: GUI 发布 ⚪
+#### M17: GUI 发布 🟢
 - **预计：** W24
+- **实际：** W1
+- **状态：** 🟢 已完成 (100%)
 - **交付物：**
-  - [ ] macOS 应用 Bundle
-  - [ ] 代码签名
-  - [ ] 发布到 GitHub
+  - [x] macOS 应用 Bundle 配置
+  - [x] 代码签名脚本 (`scripts/sign-macos.sh`)
+  - [x] 构建发布脚本 (`scripts/build-release.sh`)
+  - [x] GitHub Actions 发布工作流 (`.github/workflows/release.yml`)
+  - [x] DMG 安装包配置
+  - [x] Release 发布文档
 
 ---
 
@@ -510,12 +515,12 @@ mfind search '*.rs' -o list   # 列表输出 (默认)
 1. [x] **M14: Tauri 框架** - Tauri v2 框架搭建
 2. [x] **M15: 搜索界面** - 增强搜索功能、历史记录、文件预览
 3. [x] **M16: 系统集成** - 菜单栏图标、单实例运行、Spotlight 式启动
+4. [x] **M17: GUI 发布** - 应用 Bundle、代码签名、GitHub Release
 
 ---
 
 ### 长期规划
 
-- [ ] M17: GUI 发布（macOS 应用 Bundle、代码签名）
 - [ ] gRPC API
 - [ ] Linux/Windows 跨平台支持
 
@@ -552,4 +557,4 @@ mfind search '*.rs' -o list   # 列表输出 (默认)
 
 下一步行动:
 1. **阶段 5: 跨平台** - Linux/Windows支持
-2. **M17: GUI 发布** - macOS 应用 Bundle、代码签名
+2. **M17: GUI 发布** - macOS 应用 Bundle、代码签名 ✅

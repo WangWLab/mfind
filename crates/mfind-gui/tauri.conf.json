@@ -30,7 +30,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["app", "dmg", "appimage"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
@@ -39,8 +39,18 @@
       "icons/icon.ico"
     ],
     "macOS": {
-      "minimumSystemVersion": "10.13"
-    }
+      "minimumSystemVersion": "10.13",
+      "frameworks": [],
+      "providerShortName": null,
+      "signingIdentity": null,
+      "entitlements": null
+    },
+    "category": "Utility",
+    "shortDescription": "Fast file search tool for macOS",
+    "longDescription": "mfind is a high-performance file search tool for macOS, featuring instant search results, real-time index updates, and system integration.",
+    "externalBin": [],
+    "resources": [],
+    "copyright": "Apache 2.0"
   },
   "plugins": {
     "global-shortcut": {
