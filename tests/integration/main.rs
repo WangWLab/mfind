@@ -45,8 +45,18 @@ mod fs_tests {
 #[cfg(test)]
 mod cli_tests {
     use std::process::Command;
+    use std::path::PathBuf;
 
-    const TEST_DATA: &str = env!("CARGO_MANIFEST_DIR");
+    // test_data directory at project root
+    fn get_test_data_path() -> String {
+        let manifest_dir = env!("CARGO_MANIFEST_DIR");
+        let path = PathBuf::from(manifest_dir)
+            .parent() // go to crates/
+            .and_then(|p| p.parent()) // go to project root
+            .map(|p| p.join("test_data"))
+            .expect("Failed to find test_data directory");
+        path.display().to_string()
+    }
 
     /// Run mfind command and capture output
     fn run_mfind(args: &[&str]) -> (bool, String, String) {
@@ -96,8 +106,9 @@ mod cli_tests {
     #[test]
     #[ignore = "requires test_data directory"]
     fn test_wildcard_search_rs() {
+        let test_data = get_test_data_path();
         let (success, stdout, _stderr) = run_mfind(&[
-            "search", "*.rs", "-p", "./test_data", "-n", "2000"
+            "search", "*.rs", "-p", &test_data, "-n", "2000"
         ]);
 
         assert!(success, "Command should succeed");
@@ -108,8 +119,9 @@ mod cli_tests {
     #[test]
     #[ignore = "requires test_data directory"]
     fn test_wildcard_search_pdf() {
+        let test_data = get_test_data_path();
         let (success, stdout, _stderr) = run_mfind(&[
-            "search", "*.pdf", "-p", "./test_data"
+            "search", "*.pdf", "-p", &test_data
         ]);
 
         assert!(success);
@@ -120,8 +132,9 @@ mod cli_tests {
     #[test]
     #[ignore = "requires test_data directory"]
     fn test_prefix_search() {
+        let test_data = get_test_data_path();
         let (success, stdout, _stderr) = run_mfind(&[
-            "search", "Cargo", "-p", "./test_data"
+            "search", "Cargo", "-p", &test_data
         ]);
 
         assert!(success);
@@ -132,8 +145,9 @@ mod cli_tests {
     #[test]
     #[ignore = "requires test_data directory"]
     fn test_extension_filter() {
+        let test_data = get_test_data_path();
         let (success, stdout, _stderr) = run_mfind(&[
-            "search", "*", "-e", "toml", "-p", "./test_data"
+            "search", "*", "-e", "toml", "-p", &test_data
         ]);
 
         assert!(success);
@@ -144,8 +158,9 @@ mod cli_tests {
     #[test]
     #[ignore = "requires test_data directory"]
     fn test_json_output() {
+        let test_data = get_test_data_path();
         let (success, stdout, _stderr) = run_mfind(&[
-            "search", "*.rs", "-p", "./test_data", "-o", "json", "-n", "10"
+            "search", "*.rs", "-p", &test_data, "-o", "json", "-n", "10"
         ]);
 
         assert!(success);
@@ -157,8 +172,9 @@ mod cli_tests {
     #[test]
     #[ignore = "requires test_data directory"]
     fn test_limit_results() {
+        let test_data = get_test_data_path();
         let (success, stdout, _stderr) = run_mfind(&[
-            "search", "*", "-p", "./test_data", "-n", "10"
+            "search", "*", "-p", &test_data, "-n", "10"
         ]);
 
         assert!(success);

@@ -172,7 +172,8 @@ impl SearchCommand {
         let elapsed = start.elapsed();
 
         // Format and print results
-        let paths: Vec<String> = results.matches;
+        let total_matches = results.matches.len();
+        let mut paths: Vec<String> = results.matches;
 
         if paths.is_empty() {
             println!(
@@ -183,6 +184,11 @@ impl SearchCommand {
             return Ok(());
         }
 
+        // Apply limit
+        if paths.len() > self.limit {
+            paths.truncate(self.limit);
+        }
+
         // Print results using output writer
         writer.print_string_results(&paths);
 
@@ -190,7 +196,7 @@ impl SearchCommand {
         eprintln!(
             "{} Found {} files in {:?}",
             style("✓").green(),
-            style(paths.len()).cyan(),
+            style(total_matches).cyan(),
             elapsed
         );
 

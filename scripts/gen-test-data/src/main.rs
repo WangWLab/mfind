@@ -25,6 +25,10 @@ struct Args {
     /// 最大嵌套深度
     #[arg(short, long, default_value = "5")]
     depth: usize,
+
+    /// 是否生成集成测试所需的文件
+    #[arg(long, default_value = "false")]
+    for_integration: bool,
 }
 
 #[tokio::main]
@@ -37,6 +41,9 @@ async fn main() -> Result<()> {
     println!("  文件数量：{}", args.count);
     println!("  并发度：{}", args.concurrency);
     println!("  最大深度：{}", args.depth);
+    if args.for_integration {
+        println!("  模式：集成测试数据");
+    }
 
     // 创建基础目录
     let dirs = [
@@ -99,7 +106,53 @@ async fn main() -> Result<()> {
         "txt", "log", "cfg", "ini", "conf", "xml", "html", "css",
     ];
 
-    for i in 0..args.count {
+    // 集成测试模式：确保生成足够的特定类型文件
+    if args.for_integration {
+        // 生成 150 个 .rs 文件
+        for i in 0..150 {
+            let sem = semaphore.clone();
+            let output = args.output.clone();
+            let dirs = dir_options.clone();
+            handles.push(tokio::spawn(async move {
+                let _permit = sem.acquire().await.unwrap();
+                create_file_with_ext(&output, i, "rs", &dirs).await
+            }));
+        }
+        // 生成 150 个 .pdf 文件
+        for i in 0..150 {
+            let sem = semaphore.clone();
+            let output = args.output.clone();
+            let dirs = dir_options.clone();
+            handles.push(tokio::spawn(async move {
+                let _permit = sem.acquire().await.unwrap();
+                create_file_with_ext(&output, i, "pdf", &dirs).await
+            }));
+        }
+        // 生成 50 个 .toml 文件
+        for i in 0..50 {
+            let sem = semaphore.clone();
+            let output = args.output.clone();
+            let dirs = dir_options.clone();
+            handles.push(tokio::spawn(async move {
+                let _permit = sem.acquire().await.unwrap();
+                create_file_with_ext(&output, i, "toml", &dirs).await
+            }));
+        }
+        // 生成 50 个 Cargo 开头的文件
+        for i in 0..50 {
+            let sem = semaphore.clone();
+            let output = args.output.clone();
+            let dirs = dir_options.clone();
+            handles.push(tokio::spawn(async move {
+                let _permit = sem.acquire().await.unwrap();
+                create_cargo_file(&output, i, &dirs).await
+            }));
+        }
+    }
+
+    // 生成剩余的随机文件
+    let remaining = if args.for_integration { 400 } else { args.count };
+    for i in 0..remaining {
         let sem = semaphore.clone();
         let output = args.output.clone();
         let dirs = dir_options.clone();
@@ -233,4 +286,47 @@ fn Process_{0}(input string) string {{
 "#,
         idx
     )
+}
+
+async fn create_file_with_ext(output: &PathBuf, idx: usize, ext: &str, dirs: &[String]) -> Result<()> {
+    let mut rng = StdRng::seed_from_u64(idx as u64);
+    let dir = &dirs[rng.gen_range(0..dirs.len())];
+    let filename = format!("file_{:06}.{}", idx, ext);
+    let path = output.join(dir).join(&filename);
+
+    let content = match ext {
+        "rs" => generate_rust_content(idx),
+        "pdf" => format!("%PDF-1.4 Mock PDF content {}\n", idx),
+        "toml" => format!("# Cargo manifest {}\n[package]\nname = \"test_{}\"\nversion = \"0.1.{}\"\n", idx, idx, idx),
+        _ => format!("File {}\n", idx),
+    };
+
+    fs::write(&path, content).await.unwrap_or_else(|e| {
+        eprintln!("写入失败 {:?}: {}", path, e);
+    });
+    Ok(())
+}
+
+async fn create_cargo_file(output: &PathBuf, idx: usize, dirs: &[String]) -> Result<()> {
+    let mut rng = StdRng::seed_from_u64(idx as u64);
+    let dir = &dirs[rng.gen_range(0..dirs.len())];
+    let filename = format!("Cargo_{:06}.toml", idx);
+    let path = output.join(dir).join(&filename);
+
+    let content = format!(
+        r#"# Cargo manifest file {}
+[package]
+name = "cargo_test_{}"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+"#,
+        idx, idx
+    );
+
+    fs::write(&path, content).await.unwrap_or_else(|e| {
+        eprintln!("写入失败 {:?}: {}", path, e);
+    });
+    Ok(())
 }
