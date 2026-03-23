@@ -34,7 +34,7 @@
 | M9: TUI 界面 | W12 | W1 | 🟢 已完成 | 100% |
 | M10: 测试基础设施 | W11 | W1 | 🟢 已完成 | 100% |
 | M10b: 场景测试 | W11 | W1 | 🟢 已完成 | 100% |
-| M11: 后台服务 | W16 | - | ⚪ 待开始 | 0% |
+| M11: 后台服务 | W16 | W1 | 🟢 已完成 | 100% |
 | M12: GUI 应用 | W24 | - | ⚪ 待开始 | 0% |
 
 ---
@@ -224,14 +224,19 @@ move |res: notify::Result<notify::Event>| {
 
 ---
 
-### 阶段 3: 服务化 (4 周) ⚪
+### 阶段 3: 服务化 (4 周) 🟡
 
-#### M10: 后台服务 ⚪
+#### M11: 后台服务 🟢
 - **预计：** W14-15
+- **实际：** W1
+- **状态：** 🟢 已完成 (100%)
 - **交付物：**
-  - [ ] `mfind serve` 守护进程
-  - [ ] launchd 集成
-  - [ ] `mfind service install/start/stop`
+  - [x] `mfind serve` 守护进程
+  - [x] launchd 集成 (`service.rs`)
+  - [x] `mfind service install/start/stop/uninstall/status/logs`
+  - [x] plist 配置 (`~/Library/LaunchAgents/com.mfind.daemon.plist`)
+  - [x] 后台服务配置（LowPriorityIO, Nice=10, KeepAlive）
+  - [x] 日志输出到 `/tmp/mfind.out.log` 和 `/tmp/mfind.err.log`
 
 #### M11: RPC/API ⚪
 - **预计：** W16
@@ -430,9 +435,9 @@ mfind search '*.rs' -o list   # 列表输出 (默认)
 2. [x] **场景测试** - 4 个场景全部通过验证
 3. [x] **索引持久化** - CLI 导出/导入已实现
 4. [x] **TUI 界面** - ratatui 交互式界面
-5. [ ] **后台服务** - launchd 集成
+5. [x] **后台服务** - launchd 集成
 
-### 阶段 2 完成度：90%
+### 阶段 2 完成度：100% ✅
 
 已完成:
 - ✅ FSEvents 原生 API (M6/M6b)
@@ -441,15 +446,12 @@ mfind search '*.rs' -o list   # 列表输出 (默认)
 - ✅ 测试基础设施 (M10)
 - ✅ 场景测试 (M10b)
 - ✅ TUI 界面 (M9)
-
-待完成:
-- [ ] 后台服务 launchd 集成 (M11)
+- ✅ 后台服务 launchd 集成 (M11)
 
 ---
 
 ### 长期规划
 
-- [ ] 后台服务 (launchd) - 系统级集成
 - [ ] gRPC API
 - [ ] Tauri GUI 应用
 - [ ] Linux/Windows 跨平台支持
@@ -460,7 +462,7 @@ mfind search '*.rs' -o list   # 列表输出 (默认)
 
 **阶段 1 (MVP) 已完成！** 🎉
 
-**阶段 2 (完善 CLI) 完成度：90%** 🟢
+**阶段 2 (完善 CLI) 完成度：100%** ✅
 
 已完成里程碑:
 - ✅ M1-M5: 项目基础、MVP 发布
@@ -470,6 +472,7 @@ mfind search '*.rs' -o list   # 列表输出 (默认)
 - ✅ M9: TUI 界面
 - ✅ M10: 测试基础设施
 - ✅ M10b: 场景测试 (4 场景全部通过)
+- ✅ M11: 后台服务 launchd 集成
 
 下一步行动:
-1. **后台服务 (M11)** - launchd 集成，预计 2 周
+1. **阶段 3: 服务化** - 继续实现 gRPC/API 层，预计 2 周
