@@ -3,6 +3,9 @@
 mod commands;
 
 use commands::*;
+use mfind_core::{IndexEngine, index::engine::IndexConfig};
+use std::sync::Arc;
+use tokio::sync::RwLock;
 use tauri::{
     menu::{Menu, MenuItem},
     tray::TrayIconBuilder,
@@ -13,6 +16,11 @@ use tauri_plugin_single_instance::init;
 fn main() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .manage(GuiState {
+            engine: Arc::new(RwLock::new(
+                IndexEngine::new(IndexConfig::default()).expect("Failed to create IndexEngine")
+            )),
+        })
         .plugin(init(|app, argv, cwd| {
             // When a second instance is launched, focus the existing window
             println!("a single instance is already running: argv={argv:?}, cwd={cwd:?}");
