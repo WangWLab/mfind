@@ -8,6 +8,14 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 use tauri::{State, Manager};
 
+/// Default index file path
+fn get_default_index_path() -> PathBuf {
+    let config_dir = dirs::config_dir()
+        .unwrap_or_else(|| PathBuf::from("~/.config"))
+        .join("mfind");
+    config_dir.join("index.mfind")
+}
+
 /// Shared state for the GUI application
 pub struct GuiState {
     pub engine: Arc<RwLock<IndexEngine>>,
@@ -125,9 +133,17 @@ pub async fn build_index(
     let start = std::time::Instant::now();
 
     let mut engine = state.engine.write().await;
+
+    // Set index path for persistence
+    let index_path = get_default_index_path();
+    engine.set_index_path(index_path.clone());
+
     let root_paths: Vec<PathBuf> = paths.iter().map(PathBuf::from).collect();
 
     engine.build(&root_paths).await.map_err(|e| e.to_string())?;
+
+    // Save index to disk
+    engine.save_index().map_err(|e| e.to_string())?;
 
     let stats = engine.stats();
     let build_time_ms = start.elapsed().as_secs_f64() * 1000.0;

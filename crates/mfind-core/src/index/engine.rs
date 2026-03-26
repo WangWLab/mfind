@@ -1,6 +1,6 @@
 //! Index engine trait and implementation
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
@@ -97,6 +97,7 @@ pub struct IndexEngine {
     meta_cache: MetaCache,
     stats: IndexStats,
     built: bool,
+    index_path: Option<PathBuf>,
     #[cfg(target_os = "macos")]
     monitor_running: Arc<AtomicBool>,
 }
@@ -111,6 +112,7 @@ impl IndexEngine {
             meta_cache: MetaCache::new(),
             stats: IndexStats::default(),
             built: false,
+            index_path: None,
             #[cfg(target_os = "macos")]
             monitor_running: Arc::new(AtomicBool::new(false)),
         })
@@ -124,6 +126,118 @@ impl IndexEngine {
     /// Check if index is built
     pub fn is_built(&self) -> bool {
         self.built
+    }
+
+    /// Get index file path
+    pub fn index_path(&self) -> Option<&Path> {
+        self.index_path.as_deref()
+    }
+
+    /// Set index file path
+    pub fn set_index_path(&mut self, path: PathBuf) {
+        self.index_path = Some(path);
+    }
+
+    /// Save index to disk
+    pub fn save_index(&self) -> Result<()> {
+        let path = self.index_path.as_ref().ok_or_else(|| anyhow::anyhow!("Index path not set"))?;
+
+        // Ensure parent directory exists
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+
+        let data = self.export_blocking()?;
+        std::fs::write(path, &data)?;
+        Ok(())
+    }
+
+    /// Load index from disk
+    pub fn load_index(&mut self) -> Result<bool> {
+        let path = self.index_path.as_ref().ok_or_else(|| anyhow::anyhow!("Index path not set"))?;
+
+        if !path.exists() {
+            return Ok(false);
+        }
+
+        let data = std::fs::read(path)?;
+        self.import_blocking(&data)?;
+        Ok(true)
+    }
+
+    /// Export index (blocking version for non-async contexts)
+    fn export_blocking(&self) -> Result<Vec<u8>> {
+        use bincode::Options;
+
+        // Export FST index
+        let fst_data = self.fst_index.to_bytes()?;
+
+        // Export inode map
+        let inode_data = self.inode_map.to_bytes()?;
+
+        // Export meta cache
+        let meta_data = self.meta_cache.to_bytes()?;
+
+        // Export stats
+        let stats_data = bincode::DefaultOptions::new().serialize(&self.stats)?;
+
+        // Combine all parts: [fst_len, fst_data, inode_len, inode_data, meta_len, meta_data, stats_len, stats_data]
+        let mut buffer = Vec::new();
+
+        // Write FST
+        buffer.extend_from_slice(&(fst_data.len() as u64).to_le_bytes());
+        buffer.extend_from_slice(&fst_data);
+
+        // Write inode map
+        buffer.extend_from_slice(&(inode_data.len() as u64).to_le_bytes());
+        buffer.extend_from_slice(&inode_data);
+
+        // Write meta cache
+        buffer.extend_from_slice(&(meta_data.len() as u64).to_le_bytes());
+        buffer.extend_from_slice(&meta_data);
+
+        // Write stats
+        buffer.extend_from_slice(&(stats_data.len() as u64).to_le_bytes());
+        buffer.extend_from_slice(&stats_data);
+
+        Ok(buffer)
+    }
+
+    /// Import index (blocking version for non-async contexts)
+    fn import_blocking(&mut self, data: &[u8]) -> Result<()> {
+        use bincode::Options;
+
+        let mut offset = 0;
+
+        // Read FST
+        let fst_len = u64::from_le_bytes(data[offset..offset + 8].try_into()?) as usize;
+        offset += 8;
+        let fst_data = &data[offset..offset + fst_len];
+        self.fst_index = FSTIndex::from_bytes(fst_data)?;
+        offset += fst_len;
+
+        // Read inode map
+        let inode_len = u64::from_le_bytes(data[offset..offset + 8].try_into()?) as usize;
+        offset += 8;
+        let inode_data = &data[offset..offset + inode_len];
+        self.inode_map = InodeMap::from_bytes(inode_data)?;
+        offset += inode_len;
+
+        // Read meta cache
+        let meta_len = u64::from_le_bytes(data[offset..offset + 8].try_into()?) as usize;
+        offset += 8;
+        let meta_data = &data[offset..offset + meta_len];
+        self.meta_cache = MetaCache::from_bytes(meta_data)?;
+        offset += meta_len;
+
+        // Read stats
+        let stats_len = u64::from_le_bytes(data[offset..offset + 8].try_into()?) as usize;
+        offset += 8;
+        let stats_data = &data[offset..offset + stats_len];
+        self.stats = bincode::DefaultOptions::new().deserialize(stats_data)?;
+
+        self.built = true;
+        Ok(())
     }
 
     /// Start background filesystem monitoring (macOS only)
@@ -435,76 +549,13 @@ impl IndexEngineTrait for IndexEngine {
     }
 
     async fn export(&self) -> Result<Vec<u8>> {
-        use bincode::Options;
-
-        // Export FST index
-        let fst_data = self.fst_index.to_bytes()?;
-
-        // Export inode map
-        let inode_data = self.inode_map.to_bytes()?;
-
-        // Export meta cache
-        let meta_data = self.meta_cache.to_bytes()?;
-
-        // Export stats
-        let stats_data = bincode::DefaultOptions::new().serialize(&self.stats)?;
-
-        // Combine all parts: [fst_len, fst_data, inode_len, inode_data, meta_len, meta_data, stats_len, stats_data]
-        let mut buffer = Vec::new();
-
-        // Write FST
-        buffer.extend_from_slice(&(fst_data.len() as u64).to_le_bytes());
-        buffer.extend_from_slice(&fst_data);
-
-        // Write inode map
-        buffer.extend_from_slice(&(inode_data.len() as u64).to_le_bytes());
-        buffer.extend_from_slice(&inode_data);
-
-        // Write meta cache
-        buffer.extend_from_slice(&(meta_data.len() as u64).to_le_bytes());
-        buffer.extend_from_slice(&meta_data);
-
-        // Write stats
-        buffer.extend_from_slice(&(stats_data.len() as u64).to_le_bytes());
-        buffer.extend_from_slice(&stats_data);
-
-        Ok(buffer)
+        // Use blocking version - export is fast enough
+        self.export_blocking()
     }
 
     async fn import(&mut self, data: &[u8]) -> Result<()> {
-        use bincode::Options;
-
-        let mut offset = 0;
-
-        // Read FST
-        let fst_len = u64::from_le_bytes(data[offset..offset + 8].try_into()?) as usize;
-        offset += 8;
-        let fst_data = &data[offset..offset + fst_len];
-        self.fst_index = FSTIndex::from_bytes(fst_data)?;
-        offset += fst_len;
-
-        // Read inode map
-        let inode_len = u64::from_le_bytes(data[offset..offset + 8].try_into()?) as usize;
-        offset += 8;
-        let inode_data = &data[offset..offset + inode_len];
-        self.inode_map = InodeMap::from_bytes(inode_data)?;
-        offset += inode_len;
-
-        // Read meta cache
-        let meta_len = u64::from_le_bytes(data[offset..offset + 8].try_into()?) as usize;
-        offset += 8;
-        let meta_data = &data[offset..offset + meta_len];
-        self.meta_cache = MetaCache::from_bytes(meta_data)?;
-        offset += meta_len;
-
-        // Read stats
-        let stats_len = u64::from_le_bytes(data[offset..offset + 8].try_into()?) as usize;
-        offset += 8;
-        let stats_data = &data[offset..offset + stats_len];
-        self.stats = bincode::DefaultOptions::new().deserialize(stats_data)?;
-
-        self.built = true;
-        Ok(())
+        // Use blocking version - import is fast enough
+        self.import_blocking(data)
     }
 
     fn stats(&self) -> IndexStats {

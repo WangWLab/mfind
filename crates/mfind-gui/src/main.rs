@@ -4,6 +4,7 @@ mod commands;
 
 use commands::*;
 use mfind_core::{IndexEngine, index::engine::IndexConfig};
+use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tauri::{
@@ -13,13 +14,35 @@ use tauri::{
 };
 use tauri_plugin_single_instance::init;
 
+/// Default index file path
+fn get_default_index_path() -> PathBuf {
+    let config_dir = dirs::config_dir()
+        .unwrap_or_else(|| PathBuf::from("~/.config"))
+        .join("mfind");
+    config_dir.join("index.mfind")
+}
+
 fn main() {
+    // Create index engine and try to load persisted index
+    let index_path = get_default_index_path();
+    let mut engine = IndexEngine::new(IndexConfig::default())
+        .expect("Failed to create IndexEngine");
+
+    // Set index path
+    engine.set_index_path(index_path.clone());
+
+    // Load existing index if available
+    let load_result = engine.load_index();
+    match load_result {
+        Ok(true) => println!("Index loaded successfully from {:?}", index_path),
+        Ok(false) => println!("No existing index found, will build on demand"),
+        Err(e) => eprintln!("Failed to load index: {}", e),
+    }
+
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .manage(GuiState {
-            engine: Arc::new(RwLock::new(
-                IndexEngine::new(IndexConfig::default()).expect("Failed to create IndexEngine")
-            )),
+            engine: Arc::new(RwLock::new(engine)),
         })
         .plugin(init(|app, argv, cwd| {
             // When a second instance is launched, focus the existing window
