@@ -6,32 +6,8 @@ use std::path::PathBuf;
 use std::fs;
 
 use crate::output::{OutputFormat, OutputWriter};
-use mfind_core::{IndexEngine, IndexConfig, QueryParser};
+use mfind_core::{IndexEngine, IndexConfig, QueryParser, get_default_index_path};
 use mfind_core::index::engine::IndexEngineTrait;
-
-/// Get cache directory path
-fn get_cache_dir() -> anyhow::Result<PathBuf> {
-    let cache_dir = if cfg!(target_os = "macos") {
-        dirs::cache_dir().unwrap_or_else(|| PathBuf::from("."))
-    } else {
-        dirs::cache_dir().unwrap_or_else(|| PathBuf::from("."))
-    };
-    let mfind_cache = cache_dir.join("mfind");
-    fs::create_dir_all(&mfind_cache)?;
-    Ok(mfind_cache)
-}
-
-/// Generate cache key from search paths
-fn generate_cache_key(paths: &[PathBuf]) -> String {
-    use std::collections::hash_map::DefaultHasher;
-    use std::hash::{Hash, Hasher};
-
-    let mut hasher = DefaultHasher::new();
-    for path in paths {
-        path.hash(&mut hasher);
-    }
-    format!("index_{:016x}.bin", hasher.finish())
-}
 
 /// Search for files
 #[derive(Args, Default)]
@@ -150,39 +126,34 @@ impl SearchCommand {
         // Create index engine
         let mut engine = IndexEngine::new(index_config)?;
 
-        // Try to load cached index
-        let cache_dir = get_cache_dir()?;
-        let cache_key = generate_cache_key(&search_paths);
-        let cache_path = cache_dir.join(&cache_key);
+        // Use unified index path
+        let index_path = get_default_index_path();
 
-        if cache_path.exists() {
-            // Load from cache
+        // Try to load existing index
+        if index_path.exists() {
             let start = std::time::Instant::now();
-            match fs::read(&cache_path) {
+            match fs::read(&index_path) {
                 Ok(data) => {
                     if let Ok(_) = engine.import(&data).await {
                         let elapsed = start.elapsed();
                         eprintln!(
-                            "{} Loaded {} files from cache in {:?}",
+                            "{} Loaded {} files from index in {:?}",
                             style("✓").green(),
                             style(engine.stats().total_files).cyan(),
                             elapsed
                         );
-
-                        // Rebuild to get updated stats
-                        engine.build(&search_paths).await?
                     } else {
-                        // Cache corrupted, rebuild
+                        // Index corrupted, rebuild
                         eprintln!(
-                            "{} Building index for: {}",
-                            style("→").blue(),
+                            "{} Index corrupted, rebuilding for: {}",
+                            style("⚠").yellow(),
                             style(search_paths.iter()
                                 .map(|p| p.display().to_string())
                                 .collect::<Vec<_>>()
                                 .join(", ")
                             ).green()
                         );
-                        engine.build(&search_paths).await?
+                        engine.build(&search_paths).await?;
                     }
                 }
                 Err(_) => {
@@ -195,7 +166,7 @@ impl SearchCommand {
                             .join(", ")
                         ).green()
                     );
-                    engine.build(&search_paths).await?
+                    engine.build(&search_paths).await?;
                 }
             }
         } else {
@@ -209,12 +180,17 @@ impl SearchCommand {
                     .join(", ")
                 ).green()
             );
-            engine.build(&search_paths).await?
+            engine.build(&search_paths).await?;
         };
 
-        // Save to cache
+        // Save index after building
         if let Ok(data) = engine.export().await {
-            let _ = fs::write(&cache_path, data);
+            let _ = fs::write(&index_path, data);
+            eprintln!(
+                "{} Index saved to {:?}",
+                style("✓").green(),
+                index_path
+            );
         }
 
         // Parse query

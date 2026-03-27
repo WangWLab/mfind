@@ -25,3 +25,11 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 /// Result type alias
 pub type Result<T> = anyhow::Result<T>;
+
+/// Get the default index file path for all mfind components
+pub fn get_default_index_path() -> std::path::PathBuf {
+    let config_dir = dirs::config_dir()
+        .unwrap_or_else(|| std::path::PathBuf::from("~/.config"))
+        .join("mfind");
+    config_dir.join("index.mfind")
+}

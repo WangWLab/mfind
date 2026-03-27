@@ -3,8 +3,7 @@
 mod commands;
 
 use commands::*;
-use mfind_core::{IndexEngine, index::engine::IndexConfig};
-use std::path::PathBuf;
+use mfind_core::{IndexEngine, index::engine::IndexConfig, get_default_index_path};
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tauri::{
@@ -13,14 +12,6 @@ use tauri::{
     Manager,
 };
 use tauri_plugin_single_instance::init;
-
-/// Default index file path
-fn get_default_index_path() -> PathBuf {
-    let config_dir = dirs::config_dir()
-        .unwrap_or_else(|| PathBuf::from("~/.config"))
-        .join("mfind");
-    config_dir.join("index.mfind")
-}
 
 fn main() {
     // Create index engine and try to load persisted index

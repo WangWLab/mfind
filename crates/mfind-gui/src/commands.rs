@@ -1,20 +1,12 @@
 //! Tauri commands for mfind GUI
 
 use mfind_core::index::engine::IndexEngineTrait;
-use mfind_core::{IndexEngine, QueryParser};
+use mfind_core::{IndexEngine, QueryParser, get_default_index_path};
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tauri::{State, Manager};
-
-/// Default index file path
-fn get_default_index_path() -> PathBuf {
-    let config_dir = dirs::config_dir()
-        .unwrap_or_else(|| PathBuf::from("~/.config"))
-        .join("mfind");
-    config_dir.join("index.mfind")
-}
 
 /// Shared state for the GUI application
 pub struct GuiState {
