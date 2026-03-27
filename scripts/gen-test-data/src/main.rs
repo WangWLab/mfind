@@ -19,11 +19,11 @@ struct Args {
     count: usize,
 
     /// 并发度 (同时创建的文件数)
-    #[arg(short, long, default_value = "500")]
+    #[arg(short, long, default_value = "200")]
     concurrency: usize,
 
     /// 每个目录的最大文件数
-    #[arg(long, default_value = "1000")]
+    #[arg(long, default_value = "10000")]
     max_files_per_dir: usize,
 
     /// 最小化文件内容 (节省空间)
