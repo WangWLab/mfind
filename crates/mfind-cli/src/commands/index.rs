@@ -2,7 +2,7 @@
 
 use clap::Subcommand;
 use console::style;
-use mfind_core::{IndexEngine, IndexConfig};
+use mfind_core::{IndexEngine, IndexConfig, get_default_index_path};
 use mfind_core::index::engine::IndexEngineTrait;
 use std::path::PathBuf;
 use std::fs;
@@ -56,7 +56,7 @@ impl IndexCommand {
     pub async fn run(&self) -> anyhow::Result<()> {
         match self {
             IndexCommand::Build(cmd) | IndexCommand::Rebuild(cmd) => cmd.run().await,
-            IndexCommand::Status => self.status(),
+            IndexCommand::Status => self.status().await,
             IndexCommand::Pause => {
                 println!("{}", style("Indexing paused").yellow());
                 Ok(())
@@ -71,19 +71,65 @@ impl IndexCommand {
         }
     }
 
-    fn status(&self) -> anyhow::Result<()> {
+    async fn status(&self) -> anyhow::Result<()> {
+        let index_path = get_default_index_path();
+
         println!("{}", style("Index Status").bold());
         println!();
-        println!("  Status:        {}", style("Not initialized").yellow());
-        println!("  Total files:   0");
-        println!("  Index size:    0 B");
-        println!("  Last update:   Never");
-        println!();
-        println!(
-            "{} Run {} to build your first index.",
-            style("ℹ").blue(),
-            style("mfind index build").cyan()
-        );
+
+        if index_path.exists() {
+            // Try to load index and get stats
+            let index_config = IndexConfig::default();
+            let mut engine = IndexEngine::new(index_config)?;
+
+            match fs::read(&index_path) {
+                Ok(data) => {
+                    if engine.import(&data).await.is_ok() {
+                        let stats = engine.stats();
+                        let metadata = fs::metadata(&index_path)?;
+                        let modified = metadata.modified()?;
+                        let modified_str = format!("{modified:?}")
+                            .split('(')
+                            .next()
+                            .unwrap_or("Unknown")
+                            .to_string();
+
+                        println!("  Status:        {}", style("Initialized").green());
+                        println!("  Index path:    {}", index_path.display());
+                        println!("  Total files:   {}", style(stats.total_files).cyan());
+                        println!("  Total dirs:    {}", stats.total_dirs);
+                        println!("  Index size:    {}", style(format_bytes(stats.total_bytes as usize)).cyan());
+                        println!("  Last update:   {}", modified_str);
+                        println!("  Health:        {:?}", stats.health);
+                    } else {
+                        println!("  Status:        {}", style("Corrupted").red());
+                        println!("  Index path:    {}", index_path.display());
+                        println!();
+                        println!("{}", style("ℹ Index file exists but failed to load. Run `mfind index rebuild` to fix.").yellow());
+                    }
+                }
+                Err(_) => {
+                    println!("  Status:        {}", style("Not initialized").yellow());
+                    println!("  Index path:    {}", index_path.display());
+                    println!();
+                    println!(
+                        "{} Run {} to build your first index.",
+                        style("ℹ").blue(),
+                        style("mfind index build").cyan()
+                    );
+                }
+            }
+        } else {
+            println!("  Status:        {}", style("Not initialized").yellow());
+            println!("  Index path:    {}", index_path.display());
+            println!();
+            println!(
+                "{} Run {} to build your first index.",
+                style("ℹ").blue(),
+                style("mfind index build").cyan()
+            );
+        }
+
         Ok(())
     }
 
