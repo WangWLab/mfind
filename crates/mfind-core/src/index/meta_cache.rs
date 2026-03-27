@@ -13,6 +13,7 @@ pub struct FileMetadata {
 }
 
 /// LRU cache for file metadata
+#[derive(Clone)]
 pub struct MetaCache {
     cache: DashMap<u64, FileMetadata>,
 }

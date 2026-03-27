@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use dashmap::DashMap;
 
 /// Map inode numbers to file paths
+#[derive(Clone)]
 pub struct InodeMap {
     map: DashMap<u64, PathBuf>,
 }

@@ -1,8 +1,11 @@
 //! Filesystem scanner for indexing
 
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::Arc;
 use std::time::SystemTime;
 
+use dashmap::DashMap;
 use ignore::WalkBuilder;
 
 use crate::Result;
@@ -64,6 +67,10 @@ impl FileSystemScanner {
             all_entries.extend(entries);
         }
 
+        // Sort by path for consistent ordering (only needed for multiple roots)
+        if roots.len() > 1 {
+            all_entries.sort_by(|a, b| a.path.cmp(&b.path));
+        }
         Ok(all_entries)
     }
 
@@ -87,8 +94,10 @@ impl FileSystemScanner {
                 builder.add_ignore(pattern.clone());
             }
 
-            // Collect entries from the walker
-            let mut final_entries = Vec::new();
+            // Collect entries using DashMap for parallel insertion
+            let entries_map: DashMap<usize, ScanEntry> = DashMap::new();
+            let counter = Arc::new(AtomicUsize::new(0));
+
             for entry_result in builder.build() {
                 let entry = match entry_result {
                     Ok(e) => e,
@@ -113,7 +122,8 @@ impl FileSystemScanner {
                 #[cfg(not(unix))]
                 let inode = None;
 
-                final_entries.push(ScanEntry {
+                let idx = counter.fetch_add(1, Ordering::Relaxed);
+                entries_map.insert(idx, ScanEntry {
                     path,
                     inode,
                     size,
@@ -122,7 +132,13 @@ impl FileSystemScanner {
                 });
             }
 
-            final_entries
+            // Convert DashMap to Vec and sort by path for consistent ordering
+            let mut entries_vec: Vec<ScanEntry> = entries_map
+                .into_iter()
+                .map(|(_, entry)| entry)
+                .collect();
+            entries_vec.sort_by(|a, b| a.path.cmp(&b.path));
+            entries_vec
         })
         .await?;
 

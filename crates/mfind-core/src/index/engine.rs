@@ -3,7 +3,7 @@
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
-use std::time::{Duration, SystemTime};
+use std::time::SystemTime;
 
 use async_trait::async_trait;
 
@@ -305,6 +305,8 @@ impl IndexEngineTrait for IndexEngine {
     async fn build(&mut self, roots: &[PathBuf]) -> Result<IndexStats> {
         use crate::fs::{FileSystemScanner, ScannerConfig};
 
+        let build_start = std::time::Instant::now();
+
         let config = ScannerConfig {
             parallelism: self.config.parallelism,
             gitignore_ignore: self.config.gitignore_ignore,
@@ -313,24 +315,24 @@ impl IndexEngineTrait for IndexEngine {
             exclude_patterns: self.config.exclude_patterns.clone(),
         };
 
+        // Phase 1: Scan filesystem
         let scanner = FileSystemScanner::new(config);
         let entries = scanner.scan(roots).await?;
 
-        // Build FST index
-        let mut paths: Vec<Vec<u8>> = entries
+        // Phase 2: Build FST index - entries are already sorted by path from scanner
+        let paths: Vec<Vec<u8>> = entries
             .iter()
             .map(|e| e.path.to_string_lossy().bytes().collect())
             .collect();
-        paths.sort();
-
         self.fst_index = FSTIndex::build(&paths)?;
 
-        // Populate inode map and metadata cache
+        // Phase 3: Populate inode map and metadata cache
+        let index_metadata = self.config.index_metadata;
         for entry in entries {
             let inode = entry.inode.unwrap_or(0);
             self.inode_map.insert(inode, entry.path.clone());
 
-            if self.config.index_metadata {
+            if index_metadata {
                 self.meta_cache.insert(
                     inode,
                     crate::index::meta_cache::FileMetadata {
@@ -342,9 +344,11 @@ impl IndexEngineTrait for IndexEngine {
             }
         }
 
+        let build_time = build_start.elapsed();
+
         self.stats = IndexStats {
             total_files: paths.len() as u64,
-            build_time: Duration::from_secs(1), // TODO: measure properly
+            build_time,
             last_update: Some(std::time::SystemTime::now()),
             health: IndexHealth::Healthy,
             ..Default::default()
