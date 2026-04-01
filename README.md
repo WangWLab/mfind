@@ -4,16 +4,34 @@
 [![License](https://img.shields.io/crates/l/mfind)](LICENSE)
 [![Build Status](https://img.shields.io/github/actions/workflow/status/mfind/mfind/ci.yml)](https://github.com/mfind/mfind/actions)
 
-**Fast, independent file search for macOS** - A modern file search tool inspired by Windows Everything and fd.
+**Fast, independent file search** - A modern file search tool inspired by Windows Everything and fd.
 
 ## Features
 
 - ⚡ **Lightning fast** - FST-based indexing for sub-millisecond search
 - 🔍 **Real-time sync** - FSEvents monitoring for instant updates
-- 🍎 **macOS native** - Optimized for APFS filesystem
+- 🍎 **macOS first** - Optimized for APFS with a cross-platform filesystem abstraction
 - 🎯 **Developer friendly** - .gitignore support, JSON output, CLI-first design
 - 🆓 **Independent** - Does not rely on Spotlight
+- 🖥️ **Multiple interfaces** - CLI, TUI, HTTP API, and Tauri GUI
 - 📦 **Open source** - MIT/Apache 2.0 licensed
+
+## Project Status
+
+The repository has moved beyond the original CLI MVP. It now contains:
+
+- `mfind-core` for indexing, querying, filesystem monitoring, and storage
+- `mfind-cli` for command-line usage
+- `mfind-tui` for terminal usage
+- `mfind-api` for HTTP access
+- `mfind-gui` for desktop usage with Tauri
+
+For the current project state and documentation map, see:
+
+- [PROJECT_SUMMARY.md](PROJECT_SUMMARY.md)
+- [MILESTONES.md](MILESTONES.md)
+- [requirements.md](requirements.md)
+- [docs/README.md](docs/README.md)
 
 ## Installation
 
@@ -125,11 +143,12 @@ highlight = true
 
 ## Roadmap
 
-- [ ] **Phase 1 (MVP)**: Basic CLI search ✅
-- [ ] **Phase 2**: FSEvents monitoring, TUI
-- [ ] **Phase 3**: Background service, launchd integration
-- [ ] **Phase 4**: macOS GUI (Tauri/SwiftUI)
-- [ ] **Phase 5**: Cross-platform (Linux/Windows)
+- [x] Phase 1: CLI MVP
+- [x] Phase 2: Real-time updates, persistence, TUI, testing
+- [x] Phase 3: Background service and HTTP API
+- [x] Phase 4: Tauri GUI and desktop integration
+- [ ] Phase 5: Cross-platform hardening and release validation
+- [ ] Phase 6: Content search, plugins, and RPC
 
 ## Performance
 
@@ -145,10 +164,11 @@ highlight = true
 | Feature | mfind | fd | Spotlight | Everything |
 |---------|-------|----|-----------|------------|
 | Index | ✅ FST | ❌ | ✅ System | ✅ MFT |
-| Real-time | ✅ FSEvents | ❌ | ✅ | ✅ USN |
+| Real-time | ✅ FSEvents or platform watcher | ❌ | ✅ | ✅ USN |
 | Spotlight independent | ✅ | ✅ | ❌ | ✅ |
 | CLI | ✅ | ✅ | ⚠️ | ⚠️ |
-| GUI planned | ✅ | ❌ | ✅ | ✅ |
+| GUI | ✅ Tauri | ❌ | ✅ | ✅ |
+| API | ✅ HTTP | ❌ | ❌ | ⚠️ |
 | Open source | ✅ | ✅ | ❌ | ❌ |
 
 ## Development

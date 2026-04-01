@@ -1,259 +1,100 @@
-# mfind 项目总结
+# mfind 项目总览
 
-## 项目位置
+> 更新日期：2026-04-01
+> 本文档用于描述项目当前状态，不再保留早期阶段的历史快照式“下一步工作”。
 
-```
-/Users/wangwei/Workspace/AI/mfind/
-```
+## 项目定位
 
-## 已完成的工作
+mfind 是一个面向本地文件系统的高性能搜索工具，目标是提供脱离 Spotlight 的文件索引与检索能力，并同时支持：
 
-### 1. 项目结构 ✅
+- CLI
+- TUI
+- HTTP API
+- Tauri GUI
+- 后续跨平台扩展
 
-```
-mfind/
-├── Cargo.toml                    # Workspace 配置
-├── rust-toolchain.toml           # Rust 版本配置
-├── .rustfmt.toml                 # 代码格式配置
-├── .clippy.toml                  # Lint 配置
-├── README.md                     # 项目说明
-├── LICENSE-MIT                   # MIT 许可证
-├── LICENSE-APACHE                # Apache 2.0 许可证
-├── .gitignore                    # Git 忽略文件
-│
-├── crates/
-│   ├── mfind-core/               # 核心引擎库
-│   │   ├── Cargo.toml
-│   │   └── src/
-│   │       ├── lib.rs            # 库入口
-│   │       ├── index/            # 索引模块
-│   │       │   ├── mod.rs
-│   │       │   ├── engine.rs     # IndexEngine trait
-│   │       │   ├── fst_index.rs  # FST 索引
-│   │       │   ├── inode_map.rs  # inode 映射
-│   │       │   ├── meta_cache.rs # 元数据缓存
-│   │       │   └── stats.rs      # 统计信息
-│   │       ├── query/            # 查询模块
-│   │       │   ├── mod.rs
-│   │       │   ├── ast.rs        # 查询 AST
-│   │       │   ├── pattern.rs    # 模式匹配
-│   │       │   ├── parser.rs     # 查询解析
-│   │       │   └── executor.rs   # 查询执行
-│   │       ├── fs/               # 文件系统模块
-│   │       │   ├── mod.rs
-│   │       │   ├── backend.rs    # FS backend
-│   │       │   ├── scanner.rs    # 扫描器
-│   │       │   ├── monitor.rs    # 监控器
-│   │       │   └── watcher.rs    # FSEvents 封装
-│   │       ├── storage/          # 存储模块
-│   │       │   ├── mod.rs
-│   │       │   ├── trait_mod.rs  # Storage trait
-│   │       │   └── memory.rs     # 内存实现
-│   │       ├── event/            # 事件模块
-│   │       │   ├── mod.rs
-│   │       │   ├── batch.rs      # 事件批处理
-│   │       │   └── dedup.rs      # 事件去重
-│   │       └── util/             # 工具模块
-│   │           ├── mod.rs
-│   │           ├── path.rs       # 路径工具
-│   │           ├── time.rs       # 时间工具
-│   │           └── format.rs     # 格式工具
-│   │
-│   ├── mfind-cli/                # CLI 可执行文件
-│   │   ├── Cargo.toml
-│   │   └── src/
-│   │       ├── main.rs           # 入口
-│   │       ├── commands/         # 命令实现
-│   │       │   ├── mod.rs
-│   │       │   ├── search.rs     # 搜索命令
-│   │       │   ├── index.rs      # 索引命令
-│   │       │   ├── config.rs     # 配置命令
-│   │       │   └── service.rs    # 服务命令
-│   │       ├── config/           # CLI 配置
-│   │       │   └── mod.rs
-│   │       └── output/           # 输出格式化
-│   │           └── mod.rs
-│   │
-│   └── mfind-tui/                # TUI 界面 (框架)
-│       ├── Cargo.toml
-│       └── src/
-│           ├── lib.rs
-│           ├── app.rs
-│           └── ui/
-│               └── mod.rs
-│
-├── tests/
-│   ├── integration/              # 集成测试
-│   │   ├── main.rs
-│   │   └── common.rs
-│   └── benchmarks/               # 基准测试
-│       └── search_bench.rs
-│
-└── docs/
-    ├── architecture.md           # 架构文档
-    └── development.md            # 开发指南
-```
+## 当前状态
 
-### 2. 核心功能实现 ✅
+项目已经完成从单一 CLI 工具到“搜索内核 + 多入口界面”的第一轮演进。
 
-#### mfind-core
+当前仓库包含 5 个 workspace crate：
 
-| 模块 | 文件 | 状态 |
-|------|------|------|
-| IndexEngine | `index/engine.rs` | ✅ Trait + 骨架实现 |
-| FSTIndex | `index/fst_index.rs` | ✅ 完整实现 + 测试 |
-| InodeMap | `index/inode_map.rs` | ✅ 完整实现 |
-| MetaCache | `index/meta_cache.rs` | ✅ 完整实现 |
-| QueryParser | `query/parser.rs` | ✅ 完整实现 + 测试 |
-| Pattern | `query/pattern.rs` | ✅ 完整实现 + 测试 |
-| QueryExecutor | `query/executor.rs` | ✅ 骨架实现 |
-| FileSystemScanner | `fs/scanner.rs` | ✅ 完整实现 + 测试 |
-| FSEvents | `fs/watcher.rs` | ✅ 数据结构定义 |
-| Storage | `storage/memory.rs` | ✅ 完整实现 |
+- `mfind-core`
+  - 核心索引、查询、文件系统监控、存储抽象
+- `mfind-cli`
+  - 命令行入口
+- `mfind-tui`
+  - 终端交互界面
+- `mfind-api`
+  - HTTP/REST API
+- `mfind-gui`
+  - 基于 Tauri 的桌面界面
 
-#### mfind-cli
+## 已落地能力
 
-| 命令 | 文件 | 状态 |
-|------|------|------|
-| search | `commands/search.rs` | ✅ CLI 框架 + 占位实现 |
-| index build | `commands/index.rs` | ✅ CLI 框架 + 占位实现 |
-| index status | `commands/index.rs` | ✅ 完整实现 |
-| config | `commands/config.rs` | ✅ 完整实现 |
-| service | `commands/service.rs` | ✅ CLI 框架 + 占位实现 |
-| completions | `commands/mod.rs` | ✅ 完整实现 |
+### 搜索与索引
 
-### 3. 测试 ✅
+- FST 文件名索引
+- 前缀、通配符、正则、布尔查询
+- `.gitignore` 感知
+- 元数据缓存与 inode 映射
+- 索引导出/导入与持久化恢复
 
-| 测试类型 | 文件 | 状态 |
-|----------|------|------|
-| 单元测试 | 各模块内 | ✅ 基础测试用例 |
-| 集成测试 | `tests/integration/` | ✅ 测试框架 |
-| 基准测试 | `tests/benchmarks/` | ✅ 基准框架 |
+### 文件系统同步
 
-### 4. 文档 ✅
+- macOS 原生 FSEvents 路径
+- 事件批处理与去重
+- 增量更新
+- 面向不同平台的监控后端抽象
 
-| 文档 | 文件 | 状态 |
-|------|------|------|
-| README | `README.md` | ✅ 完整 |
-| 架构文档 | `docs/architecture.md` | ✅ 完整 |
-| 开发指南 | `docs/development.md` | ✅ 完整 |
-| 需求文档 | `../requirements.md` | ✅ 完整 |
-| 市场调研 | `../market-research.md` | ✅ 完整 |
+### 入口层
 
----
+- CLI 搜索、索引、服务管理命令
+- TUI 搜索界面
+- HTTP `/health`、`/stats`、`/search` 接口
+- Tauri GUI 搜索、预览、系统托盘、快捷键
 
-## 下一步工作
+### 工程化
 
-### 阶段 1: MVP 完善 (1-2 周)
+- 集成测试
+- 场景测试
+- 基准测试
+- 发布脚本与桌面打包配置
 
-1. **完成 IndexEngine 实现**
-   - [ ] 实现 `build()` 方法的完整逻辑
-   - [ ] 实现 `update()` 方法的增量更新
-   - [ ] 实现 `search()` 方法的完整搜索
+## 当前技术结构
 
-2. **完成 FileSystemScanner 集成**
-   - [ ] 测试并行扫描性能
-   - [ ] 优化.gitignore 解析
-   - [ ] 添加进度报告
+项目采用分层架构：
 
-3. **完成 CLI 搜索功能**
-   - [ ] 集成 IndexEngine
-   - [ ] 实现结果输出格式化
-   - [ ] 添加彩色高亮
+1. 接口层
+   - CLI / TUI / GUI / API
+2. 服务与编排层
+   - 搜索、索引、监控、配置、服务生命周期
+3. 核心引擎层
+   - IndexEngine / QueryEngine / Storage
+4. 文件系统抽象层
+   - Scanner / Monitor / Backend
+5. 平台适配层
+   - macOS / Linux / Windows
 
-### 阶段 2: FSEvents 监控 (1-2 周)
+更详细的设计说明见 `docs/architecture.md`。
 
-1. **实现 FSEvents 监控器**
-   - [ ] 使用 notify crate
-   - [ ] 实现事件批处理
-   - [ ] 实现事件去重
+## 当前文档分工
 
-2. **实现增量索引更新**
-   - [ ] Create 事件处理
-   - [ ] Delete 事件处理
-   - [ ] Modify 事件处理
-   - [ ] Rename 事件处理
+- `README.md`
+  - 对外说明与快速开始
+- `requirements.md`
+  - 产品需求、能力分级、长期演进方向
+- `MILESTONES.md`
+  - 已完成和待完成里程碑
+- `docs/README.md`
+  - 全量文档导航
 
-### 阶段 3: 持久化 (1 周)
+## 下一阶段重点
 
-1. **实现 LMDB 存储**
-   - [ ] 添加 lmdb-rkv 依赖
-   - [ ] 实现 Storage trait
-   - [ ] 实现索引导出/导入
+下一阶段建议聚焦在“把已有能力收口成稳定产品”，而不是继续平铺新功能：
 
-### 阶段 4: TUI (1-2 周)
-
-1. **实现 TUI 界面**
-   - [ ] 使用 ratatui 框架
-   - [ ] 实现搜索界面
-   - [ ] 实现结果列表
-   - [ ] 实现键盘导航
-
-### 阶段 5: 服务化 (1-2 周)
-
-1. **实现后台服务**
-   - [ ] 实现 serve 命令
-   - [ ] 创建 launchd plist
-   - [ ] 实现 service install/uninstall
-
----
-
-## 技术亮点
-
-1. **FST 索引** - 使用 fst crate 实现内存高效的字符串存储
-2. **并行扫描** - 使用 rayon 实现并行目录遍历
-3. **异步架构** - 使用 tokio 实现异步 I/O
-4. **分层设计** - 清晰的分层架构，易于扩展
-5. **跨平台潜力** - 文件系统抽象层支持未来跨平台
-
----
-
-## 依赖版本
-
-```toml
-# 核心依赖
-fst = "0.4"           # FST 数据结构
-notify = "6"          # FSEvents 封装
-walkdir = "2"         # 目录遍历
-ignore = "0.4"        # .gitignore 解析
-rayon = "1"           # 数据并行
-tokio = "1"           # 异步运行时
-clap = "4"            # CLI 框架
-ratatui = "0.24"      # TUI 框架
-```
-
----
-
-## 快速开始
-
-```bash
-cd mfind
-
-# 编译
-cargo build
-
-# 运行测试
-cargo test
-
-# 运行 CLI
-cargo run -- --help
-
-# 运行基准测试
-cargo bench
-```
-
----
-
-## 项目统计
-
-| 指标 | 数量 |
-|------|------|
-| Crate 数量 | 3 |
-| 源代码文件 | ~30 |
-| 代码行数 (估计) | ~3000+ |
-| 测试文件 | 3 |
-| 文档文件 | 5 |
-
----
-
-*创建日期：2026-03-22*
+1. 统一文档和外部说明，减少规划与实现脱节
+2. 校准 GUI、API、CLI 三个入口的能力边界
+3. 补齐大规模数据下的性能和内存验证
+4. 明确跨平台能力的真实完成度与发布标准
+5. 决定内容搜索、插件系统、RPC/gRPC 的优先级
